@@ -1,4 +1,4 @@
-name: DUBBED-DHAMAAL-V27-ULTIMATE
+name: DUBBED-DHAMAAL-V29-GHOST-BUSTER
 
 on:
   workflow_dispatch:
@@ -15,54 +15,45 @@ jobs:
           pip install google-genai pyautogui opencv-python numpy
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Secure Login (IP & Link)
+      - name: 2. Tailscale Secure Tunnel
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          
-          Write-Host "🔗 Connecting to Tailscale..."
-          # Key se login ki koshish
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=dhamaal-v27 --accept-routes --force-reauth
-          
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=dhamaal-v29 --accept-routes --force-reauth
           $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
-          if (-not $tsIP) {
-              Write-Host "⚠️ Key failed! Login using this QR/Link below:"
-              & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname=dhamaal-v27 --qr
-          } else {
-              Write-Host "✅ TAILSCALE IP: $tsIP"
-          }
+          Write-Host "✅ TAILSCALE IP: $tsIP"
 
-      - name: 3. Create RDP & Anti-Freeze Registry
+      - name: 3. registry Hack (Fix Black Screen & 0% Network)
         run: |
+          # Windows ko "Headless" mode mein bhi graphics render karne par majboor karna
+          $regPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
+          if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force }
+          Set-ItemProperty -Path $regPath -Name "BackgroundModeEnabled" -Value 1
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name 'fEnableWinStation' -Value 1
+          
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           if (!(Get-LocalUser -Name "RDP" -ErrorAction SilentlyContinue)) {
               New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
-          
-          # 0% Network Fix: Force Windows to render background apps
-          $regPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
-          if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force }
-          Set-ItemProperty -Path $regPath -Name "BackgroundModeEnabled" -Value 1
-          Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'ExtendedUIHoverTime' -Value 1
 
-      - name: 4. Launch Organic AI Matrix (Dubbed Dhamaal TV)
+      - name: 4. Launch "Always-Active" Matrix
         run: |
           $channel = "Dubbed Dhamaal TV"
           $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-          foreach ($i in 1..15) {
-            # Search Engine Link (Mimics real traffic)
+          foreach ($i in 1..12) {
             $searchUrl = "https://www.youtube.com/results?search_query=" + $channel.Replace(" ", "+")
             $flags = @(
               "--user-data-dir=C:\Profiles\AI_$i",
               "--no-sandbox",
               "--disable-blink-features=AutomationControlled",
+              "--disable-features=CalculateNativeWinOcclusion", # 🔥 YE SABSE ZAROORI HAI (0% Fix)
               "--disable-background-timer-throttling",
               "--disable-backgrounding-occluded-windows",
               "--disable-renderer-backgrounding",
-              "--force-device-scale-factor=0.6",
+              "--no-first-run",
               "--mute-audio",
               "$searchUrl"
             )
@@ -70,36 +61,33 @@ jobs:
             Start-Sleep -Seconds 10
           }
 
-      - name: 5. Gemini-Powered "Human Soul" Agent
+      - name: 5. Gemini AI "Screen-Wake" Agent
         shell: python
         run: |
           import pyautogui
           import time
           import random
           
-          print("AI Brain V27: Forcing Network Activity & Views...")
-          time.sleep(60) # Initial Loading
+          # Force the session to stay awake
+          print("AI Brain V29: Waking up Chrome Windows...")
+          time.sleep(30)
           
           while True:
               try:
-                  # Step 1: Switch Window
+                  # Har 30 second baad Alt+Tab karke screen 'refresh' karna
                   pyautogui.keyDown('alt')
                   pyautogui.press('tab')
                   pyautogui.keyUp('alt')
                   time.sleep(2)
                   
-                  # Step 2: Organic Interaction (Click to Play)
-                  # Click on the center to start video if stuck
-                  pyautogui.click(640, 480) 
+                  # Screen ke center mein click karna taake "Black Screen" khatam ho
+                  pyautogui.click(640, 480)
                   pyautogui.press('k') # Force Play
                   
-                  # Step 3: Anti-Freeze Scrolling
-                  pyautogui.scroll(random.randint(-500, 500))
+                  # Random Mouse movement to simulate human
+                  pyautogui.moveTo(random.randint(100, 1000), random.randint(100, 700))
                   
-                  # Step 4: Quality Pulse (144p toggle)
-                  pyautogui.press('s') 
-                  
-                  print(f"AI: Active Pulse sent. Time: {time.strftime('%H:%M:%S')}")
-                  time.sleep(random.randint(40, 70))
+                  print(f"AI: Heartbeat sent. Network should be active at {time.strftime('%H:%M:%S')}")
+                  time.sleep(random.randint(30, 60))
               except:
-                  time.sleep(5)
+                  pass
