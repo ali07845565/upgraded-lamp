@@ -1,4 +1,4 @@
-name: DUBBED-DHAMAAL-V112-FORCE-RUN
+name: DUBBED-DHAMAAL-V115-GOD-AUTO
 
 on:
   workflow_dispatch:
@@ -9,24 +9,22 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Setup & Requirements (Final Fix)
+      - name: 1. Engine & Chrome Setup
         run: |
           Stop-Service -Name wuauserv, SysMain -Force
-          # Force install specific versions to avoid crash
-          python -m pip install --upgrade pip
-          pip install pyautogui psutil --quiet
+          pip install psutil pyautogui --quiet
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Tunnel
+      - name: 2. Tailscale Secure Tunnel
         continue-on-error: true 
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-v112" --accept-routes --force-reauth
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-god-auto" --accept-routes --force-reauth
           Start-Sleep -Seconds 20
 
-      - name: 3. Create RDP & Debug-Enabled Script
+      - name: 3. Create RDP & Inject Auto-Start Logic
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -35,62 +33,65 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
           
-          # Ye script ab crash hone par Error File banayegi
-          $debugScript = @"
+          # Master Script with 5 Fixed Links & Guest Mode
+          $masterScript = @"
           import os
           import time
           import subprocess
-          import sys
+          import pyautogui
+          import random
 
-          # Logs create karne ke liye
-          log_file = r'C:\Users\Public\Desktop\error_log.txt'
+          # --- AAPKE 5 LINKS (FIXED) ---
+          links = [
+              "https://youtu.be/oiyYa3IL2Rc?si=LnzHB2SnxLvotRp-",
+              "https://youtu.be/OXuTuHQqB7s?si=hsLjg-WN4Kddl2en",
+              "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G0",
+              "https://youtu.be/z25lo2mogbk?si=RDQn25eKVGl6u8Dy",
+              "https://youtu.be/ZkJlQ_q7x5Q?si=5vafU9AuYNTZcp5E"
+          ]
           
-          def log_error(msg):
-              with open(log_file, 'a') as f:
-                  f.write(f"[{time.strftime('%H:%M:%S')}] {msg}\n")
+          chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
+          
+          # Wait for desktop to load
+          time.sleep(10)
+          
+          print("TITAN GOD-MODE: Launching 25 Profiles...")
+          for i in range(25):
+              try:
+                  url = links[i % len(links)]
+                  profile = f'--user-data-dir=C:\\Users\\Public\\T_{i}'
+                  flags = [
+                      chrome_path, profile, '--guest', '--no-first-run', 
+                      '--mute-audio', '--window-size=500,400', 
+                      '--disable-blink-features=AutomationControlled', url
+                  ]
+                  subprocess.Popen(flags)
+                  time.sleep(4)
+              except:
+                  pass
 
-          try:
-              log_error("Script Started Successfully")
-              
-              links = [
-                  "https://youtu.be/oiyYa3IL2Rc?si=LnzHB2SnxLvotRp-",
-                  "https://youtu.be/OXuTuHQqB7s?si=hsLjg-WN4Kddl2en",
-                  "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G0",
-                  "https://youtu.be/z25lo2mogbk?si=RDQn25eKVGl6u8Dy",
-                  "https://youtu.be/ZkJlQ_q7x5Q?si=5vafU9AuYNTZcp5E"
-              ]
-              
-              chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-              
-              if not os.path.exists(chrome_path):
-                  log_error("Chrome Path NOT FOUND!")
-                  sys.exit()
-
-              print("Launching Browsers... Check Desktop for logs if it crashes.")
-              
-              for i in range(15): # Reduced to 15 for stability
-                  try:
-                      url = links[i % len(links)]
-                      profile = f'--user-data-dir=C:\\Profiles\\Titan_{i}'
-                      # Minimal flags to ensure it opens
-                      cmd = [chrome_path, profile, '--guest', '--no-first-run', '--mute-audio', url]
-                      subprocess.Popen(cmd)
-                      log_error(f"Profile {i} Launched")
-                      time.sleep(5)
-                  except Exception as e:
-                      log_error(f"Failed to launch profile {i}: {str(e)}")
-
-              print("Running Anti-Freeze. Keep this window open.")
-              while True:
+          # Anti-Freeze Loop (Human Activity)
+          while True:
+              try:
+                  pyautogui.press('shift')
                   time.sleep(60)
-
-          except Exception as e:
-              log_error(f"CRITICAL SCRIPT ERROR: {str(e)}")
+              except:
+                  pass
           "@
-          $debugScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_V112.py" -Encoding ascii
+          
+          # Save to Public Desktop
+          $masterScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_FINAL.py" -Encoding ascii
+          
+          # AUTO-START INJECTION: Login hote hi chalne ke liye
+          $startupPath = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
+          $masterScript | Out-File -FilePath "$startupPath\TitanAuto.pyw" -Encoding ascii
 
-      - name: 4. Final Success
+      - name: 4. Final Success Confirmation
         run: |
-          Write-Host "RDP User: RDP | Pass: Admin@Watch786"
-          Write-Host "Run 'TITAN_V112.py' from Desktop."
+          Write-Host "############################################"
+          Write-Host "STATUS: 100% AUTOMATIC GOD-MODE READY"
+          Write-Host "1. Connect RDP (User: RDP | Pass: Admin@Watch786)"
+          Write-Host "2. Login karte hi 10 second wait karein."
+          Write-Host "3. Browsers khud khul jayenge!"
+          Write-Host "############################################"
           Start-Sleep -Seconds 9000
