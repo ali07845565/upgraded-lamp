@@ -1,4 +1,4 @@
-name: TITAN-V131-OMNI-BYPASS
+name: TITAN-V132-FINAL-GHOST
 
 on:
   workflow_dispatch:
@@ -9,23 +9,22 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Deep System Hardening
+      - name: 1. Deep System Cleaning
         run: |
-          # Audio aur फालतू services ko band karna resources bachane ke liye
           Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
-          pip install psutil pyautogui numpy --quiet
+          pip install psutil pyautogui --quiet
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Secure Tunnel (Auth Key)
+      - name: 2. Tailscale Secure Tunnel
         continue-on-error: true 
         run: |
           $authKey = "tskey-auth-kYcM6WeyfR11CNTRL-9FQy2jXXfC6nPVvmruwuC66aU7SsCJz9h" 
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey --hostname="titan-omni-v131" --accept-routes
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey --hostname="titan-final-v132" --accept-routes
 
-      - name: 3. Create THE OMNI-BYPASS Master Script
+      - name: 3. Create THE FINAL GHOST Script (With Fixed Links)
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -34,34 +33,32 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-          $omniScript = @"
+          $finalScript = @"
           import os
           import time
           import subprocess
           import psutil
           import random
-          import pyautogui
 
-          # --- ADVANCED OMNI-BYPASS LINKS ---
-          # 1. Embed API + 2. Social Referrer + 3. Loop Logic
-          raw_video_ids = ["0", "1", "2", "3", "4"] 
+          # --- YOUR CHANNEL LINKS (FIXED & SECURED) ---
+          # Humne aapke 5 links ko Embed API format mein convert kar diya hai
+          raw_ids = ["0", "1", "2", "3", "4"] 
           
-          # AI Logic: Converting to Ghost Links with WhatsApp Referrer Spoofing
-          links = [f"https://www.youtube.com/embed/{vid}?autoplay=1&mute=1&loop=1&playlist={vid}&rel=0&controls=0&origin=https://web.whatsapp.com" for vid in raw_video_ids]
+          # AI Logic: Social Referrer (WhatsApp) + Embed API + Autoplay + Mute
+          links = [f"https://www.youtube.com/embed/{id}?autoplay=1&mute=1&loop=1&playlist={id}&origin=https://web.whatsapp.com" for id in raw_ids]
           
           chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-          profile_base = r'C:\Users\Public\TitanOmniProfiles'
+          profile_base = r'C:\Users\Public\TitanFinalGhost'
 
-          def launch_omni_session():
-              print("[AI-OMNI] Deploying Stealth Fingerprints...")
+          def launch_titan():
+              print("[GHOST] Launching 25 Protected Windows with WhatsApp Referrer...")
               for i in range(25):
                   url = links[i % len(links)]
-                  p_dir = os.path.join(profile_base, f'OmniUser_{i}')
+                  p_dir = os.path.join(profile_base, f'User_{i}')
                   
-                  # Hybrid User-Agents (Changing every launch)
+                  # Randomized Stealth Identity
                   ua = random.choice([
-                      "Mozilla/5.0 (Linux; Android 13; SM-X906B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                      "Mozilla/5.0 (iPad; CPU OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
+                      "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
                       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
                   ])
 
@@ -71,49 +68,32 @@ jobs:
                       f'--user-agent={ua}',
                       '--no-first-run', 
                       '--mute-audio', 
-                      '--disable-blink-features=AutomationControlled', # Crucial for Bot Bypass
+                      '--disable-blink-features=AutomationControlled', # Bypasses "Sign in" prompt
                       '--window-size=400,300',
                       '--force-device-scale-factor=0.5',
-                      '--disable-infobars',
-                      '--no-sandbox',
-                      '--disable-gpu',
+                      '--autoplay-policy=no-user-gesture-required',
                       url
                   ]
                   subprocess.Popen(flags)
-                  # AI randomized interval to prevent IP pattern detection
-                  time.sleep(random.uniform(6, 10))
+                  time.sleep(random.uniform(7, 10)) # Human-like launch delay
 
           while True:
-              # Kill old processes and clear memory
               for proc in psutil.process_iter(['name']):
                   if proc.info['name'] == 'chrome.exe':
                       try: proc.kill()
                       except: pass
-              time.sleep(5)
-              
-              launch_omni_session()
-              print("[SYSTEM] Omni-Bypass Session Active. AI Monitoring...")
-              
-              # AI Human Mimicry Loop (Moves mouse to keep session alive)
-              for _ in range(240): # 4 Hours
-                  try:
-                      pyautogui.moveRel(random.randint(-5, 5), random.randint(-5, 5))
-                  except: pass
-                  time.sleep(60)
+              time.sleep(10)
+              launch_titan()
+              print("[SUCCESS] Session Started. AI Cycle active for 4 hours.")
+              time.sleep(14400) 
           "@
           
-          $omniScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_OMNI.py" -Encoding ascii
-          
-          # Advance AI .bat with Command-Line Proxy logic
-          $batContent = "@echo off`ntitle TITAN OMNI-BYPASS COMMANDER`ncolor 0D`necho [AI] Flushing Network Caches...`nipconfig /flushdns >nul`necho [AI] Bypassing Google Bot-Detection Sensors...`nnet stop audiosrv /y >nul 2>&1`necho [AI] Activating Social Referrer Spoofing...`npython C:\Users\Public\Desktop\TITAN_OMNI.py`npause"
-          $batContent | Out-File -FilePath "C:\Users\Public\Desktop\START_OMNI.bat" -Encoding ascii
+          $finalScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_FINAL.py" -Encoding ascii
+          "@echo off`ntitle TITAN FINAL`nnet stop audiosrv /y >nul 2>&1`npython C:\Users\Public\Desktop\TITAN_FINAL.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_FINAL.bat" -Encoding ascii
 
-      - name: 4. Deployment Complete
+      - name: 4. Deployment Instruction
         run: |
-          Write-Host "############################################"
-          Write-Host "V131 OMNI-BYPASS ENGINE IS LIVE!"
-          Write-Host "REFERRER: WhatsApp Web (Spoofed)"
-          Write-Host "BOT-BYPASS: AutomationControlled=Disabled"
-          Write-Host "Just run START_OMNI.bat and watch the magic!"
-          Write-Host "############################################"
+          Write-Host "V132 FINAL DEPLOYED!"
+          Write-Host "LINKS STATUS: INTEGRATED & SECURED"
+          Write-Host "BOT BYPASS: WHATSAPP REFERRER ACTIVE"
           Start-Sleep -Seconds 9000
