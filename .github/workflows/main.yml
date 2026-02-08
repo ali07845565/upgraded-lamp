@@ -1,4 +1,4 @@
-name: DUBBED-DHAMAAL-V106-FINAL-BOSS
+name: DUBBED-DHAMAAL-V107-VISIBLE
 
 on:
   workflow_dispatch:
@@ -9,121 +9,65 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Titan Core & Python Setup
+      - name: 1. System & Chrome Setup
         run: |
-          Stop-Service -Name wuauserv, SysMain -Force
-          pip install pyautogui opencv-python numpy psutil
+          pip install pyautogui psutil
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Stealth Login
+      - name: 2. Tailscale Login
         continue-on-error: true 
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          $randomID = Get-Random -Minimum 1000 -Maximum 9999
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-boss-$randomID" --accept-routes --force-reauth
-          Start-Sleep -Seconds 30
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" status
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-visible" --accept-routes --force-reauth
+          Start-Sleep -Seconds 20
 
-      - name: 3. Registry Hacks (Fix Black Screen & 0% Network)
+      - name: 3. Create RDP User & Auto-Start Script
         run: |
-          $regPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
-          if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force }
-          Set-ItemProperty -Path $regPath -Name "BackgroundModeEnabled" -Value 1
-          # Ye registry key Chrome ko hamesha 'Focus' mein rakhti hai
-          Set-ItemProperty -Path $regPath -Name "HardwareAccelerationModeEnabled" -Value 1
-          
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           if (!(Get-LocalUser -Name "RDP" -ErrorAction SilentlyContinue)) {
               New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
-
-      - name: 4. Launch "Infinite Loop" Matrix (15 Profiles)
-        run: |
-          $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-          # Aapke Specific 5 Links
-          $links = @(
-            "https://youtu.be/oiyYa3IL2Rc?si=LnzHB2SnxLvotRp-",
-            "https://youtu.be/OXuTuHQqB7s?si=hsLjg-WN4Kddl2en",
-            "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G0",
-            "https://youtu.be/z25lo2mogbk?si=RDQn25eKVGl6u8Dy",
-            "https://youtu.be/ZkJlQ_q7x5Q?si=5vafU9AuYNTZcp5E"
-          )
-
-          foreach ($i in 1..15) {
-            $url = $links[($i-1) % $links.Length]
-            $flags = @(
-              "--user-data-dir=C:\Profiles\Titan_$i",
-              "--no-sandbox",
-              "--disable-blink-features=AutomationControlled",
-              "--disable-features=CalculateNativeWinOcclusion", # 🔥 YE 0% NETWORK KA ILAJ HAI
-              "--force-device-scale-factor=0.6",
-              "--mute-audio",
-              "--incognito",
-              "$url"
-            )
-            Start-Process $chrome -ArgumentList $flags
-            Start-Sleep -Seconds 10
-          }
-
-      - name: 5. Run Super AI Brain (Auto-144p & Anti-Freeze)
-        shell: python
-        env:
-          PYTHONIOENCODING: utf-8
-        run: |
-          import pyautogui
+          
+          # Ye script RDP ke andar desktop par save ho jayegi
+          $startScript = @"
+          import os
           import time
-          import random
-          import psutil
-          import sys
+          import subprocess
+          
+          links = [
+              "https://www.youtube.com/watch?v=VIDEO1",
+              "https://www.youtube.com/watch?v=VIDEO2",
+              "https://www.youtube.com/watch?v=VIDEO3",
+              "https://www.youtube.com/watch?v=VIDEO4",
+              "https://www.youtube.com/watch?v=VIDEO5"
+          ]
+          
+          chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
+          
+          for i in range(15):
+              url = links[i % len(links)]
+              profile = f'--user-data-dir=C:\\Profiles\\Titan_{i}'
+              flags = [chrome_path, profile, '--no-sandbox', '--mute-audio', '--start-maximized', url]
+              subprocess.Popen(flags)
+              time.sleep(5)
+          "@
+          $startScript | Out-File -FilePath "C:\Users\Public\Desktop\Start_Browsers.py" -Encoding ascii
 
-          print("--- V106 FINAL BOSS ACTIVE ---")
-          time.sleep(60) # Wait for browsers to settle
+      - name: 4. Anti-Freeze Activation
+        run: |
+          # Force windows to keep session alive
+          reg add "HKLM\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
+          reg add "HKCU\Control Panel\Desktop" /v ScreenSaveActive /t REG_SZ /d 0 /f
 
-          def set_144p():
-              # Shortcut keys for YouTube 144p (Settings > Quality > 144p)
-              pyautogui.press('s')
-              time.sleep(1)
-              for _ in range(5): pyautogui.press('up')
-              pyautogui.press('enter')
-              time.sleep(1)
-              pyautogui.press('down')
-              pyautogui.press('enter')
-              print("[LOG] Forced 144p Quality")
-
-          while True:
-              try:
-                  # Feature: Smart Window Switching
-                  pyautogui.keyDown('alt')
-                  pyautogui.press('tab')
-                  pyautogui.keyUp('alt')
-                  time.sleep(2)
-
-                  # Feature: Human-like Activity (Prevents 0% Network)
-                  # Randomly click to keep video playing
-                  pyautogui.click(random.randint(300, 900), random.randint(200, 600))
-                  pyautogui.press('k') # Toggle Play
-                  
-                  # Feature: Auto-Healing (Refresh if network dies)
-                  net_stat = psutil.net_io_counters().bytes_recv
-                  time.sleep(5)
-                  if psutil.net_io_counters().bytes_recv == net_stat:
-                      print("[WARNING] Zero Data Flow! Refreshing...")
-                      pyautogui.press('f5')
-                  
-                  # Feature: Force 144p randomly
-                  if random.random() < 0.05: 
-                      set_144p()
-
-                  # Feature: Anti-Sleep Movements
-                  pyautogui.moveTo(random.randint(100, 1000), random.randint(100, 700), duration=1)
-                  pyautogui.press('shift')
-                  
-                  print(f"Titan Heartbeat: Network Active at {time.strftime('%H:%M:%S')}")
-                  time.sleep(random.randint(40, 70))
-              except Exception as e:
-                  print(f"Self-Fixing Error: {e}")
-                  time.sleep(10)
+      - name: 5. Waiting for RDP Connection
+        run: |
+          print "!!! ACTION REQUIRED !!!"
+          print "1. Connect via RDP using Tailscale IP"
+          print "2. Desktop par 'Start_Browsers.py' dikhega"
+          print "3. Use Right-Click karke 'Run with Python' karein"
+          print "Ab browser aapki screen par khulega aur 0% Network nahi aayega."
+          Start-Sleep -Seconds 9000
