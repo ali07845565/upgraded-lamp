@@ -1,4 +1,4 @@
-name: DUBBED-DHAMAAL-V102-TITAN-FIXED
+name: DUBBED-DHAMAAL-V105-INFINITE
 
 on:
   workflow_dispatch:
@@ -9,37 +9,29 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Core Engine Setup
+      - name: 1. Titan Core & Python Setup
         run: |
           Stop-Service -Name wuauserv, SysMain -Force
-          pip install pyautogui opencv-python numpy
+          pip install pyautogui opencv-python numpy psutil
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Login (IP & Link Recovery)
+      - name: 2. Tailscale Stealth Login
         continue-on-error: true 
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          
-          Write-Host "------------------------------------------------------"
-          Write-Host "TITAN CONNECTION SYSTEM STARTING..."
-          
-          # Force link if key is invalid
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname=titan-v102 --accept-routes --force-reauth
-          
-          # Wait a bit for you to see the link
-          Start-Sleep -Seconds 30
-          Write-Host "Checking Status..."
+          $randomID = Get-Random -Minimum 1000 -Maximum 9999
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-final-$randomID" --accept-routes --force-reauth
+          Start-Sleep -Seconds 20
           & "$env:ProgramFiles\Tailscale\tailscale.exe" status
-          Write-Host "------------------------------------------------------"
 
-      - name: 3. Registry Hack (0% Network & Freeze Fix)
+      - name: 3. Registry Hacks (Anti-Freeze & GPU)
         run: |
           $regPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
           if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force }
           Set-ItemProperty -Path $regPath -Name "BackgroundModeEnabled" -Value 1
-          
+          Set-ItemProperty -Path $regPath -Name "HardwareAccelerationModeEnabled" -Value 1
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           if (!(Get-LocalUser -Name "RDP" -ErrorAction SilentlyContinue)) {
@@ -47,25 +39,35 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-      - name: 4. Launch Always-Active Browsers
+      - name: 4. Launch "Infinite Loop" Matrix
         run: |
-          $channel = "Dubbed Dhamaal TV"
           $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-          foreach ($i in 1..12) {
-            $searchUrl = "https://www.youtube.com/results?search_query=" + $channel.Replace(" ", "+")
+          # Aapke 5 Links
+          $links = @(
+            "https://youtu.be/oiyYa3IL2Rc?si=LnzHB2SnxLvotRp-",
+            "https://youtu.be/OXuTuHQqB7s?si=hsLjg-WN4Kddl2en",
+            "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G0",
+            "https://youtu.be/z25lo2mogbk?si=RDQn25eKVGl6u8Dy",
+            "https://youtu.be/ZkJlQ_q7x5Q?si=5vafU9AuYNTZcp5E"
+          )
+
+          foreach ($i in 1..15) {
+            $url = $links[($i-1) % $links.Length]
             $flags = @(
               "--user-data-dir=C:\Profiles\Titan_$i",
               "--no-sandbox",
               "--disable-blink-features=AutomationControlled",
-              "--disable-features=CalculateNativeWinOcclusion", # 🔥 Fixes 0% Network
+              "--disable-features=CalculateNativeWinOcclusion",
+              "--force-device-scale-factor=0.5",
               "--mute-audio",
-              "$searchUrl"
+              "--incognito",
+              "$url"
             )
             Start-Process $chrome -ArgumentList $flags
-            Start-Sleep -Seconds 10
+            Start-Sleep -Seconds 8
           }
 
-      - name: 5. Run AI "Active-Human" Brain
+      - name: 5. Run "Titan-20" Super AI Brain
         shell: python
         env:
           PYTHONIOENCODING: utf-8
@@ -73,29 +75,44 @@ jobs:
           import pyautogui
           import time
           import random
-          import sys
+          import psutil
 
-          # No emojis here to prevent UnicodeEncodeError
-          print("AI Titan V102: System Online. Monitoring Activity...")
-          
-          time.sleep(30)
-          
+          print("--- V105 INFINITE STARTING ---")
+          time.sleep(60) # Wait for all tabs to load
+
+          def force_144p():
+              # Feature: Automatic Quality Selector (144p)
+              pyautogui.press('s') # Settings shortcut
+              time.sleep(1)
+              for _ in range(5): pyautogui.press('up')
+              pyautogui.press('enter')
+              time.sleep(1)
+              pyautogui.press('down')
+              pyautogui.press('enter')
+
           while True:
               try:
-                  # Move mouse to keep screen from turning black
-                  pyautogui.moveTo(random.randint(200, 800), random.randint(200, 600), duration=1)
-                  
-                  # Switch Tabs
+                  # Feature: Smart Window Cycling
                   pyautogui.keyDown('alt')
                   pyautogui.press('tab')
                   pyautogui.keyUp('alt')
+                  time.sleep(2)
+
+                  # Feature: Interaction (Anti-0% Network)
+                  pyautogui.click(random.randint(400, 800), random.randint(300, 600))
+                  pyautogui.press('k') # Force Play
                   
-                  # Interaction to trigger network
-                  pyautogui.click()
-                  pyautogui.press('k')
+                  # Feature: Force 144p occasionally
+                  if random.random() < 0.1: 
+                      pyautogui.press('1') # Shortcut for 144p (if active)
                   
-                  print("Titan Heartbeat: Network Active.")
-                  time.sleep(random.randint(30, 60))
-              except Exception as e:
-                  print("Fixing minor glitch...")
-                  time.sleep(10)
+                  # Feature: Human-like Movements
+                  pyautogui.moveTo(random.randint(100, 1000), random.randint(100, 700), duration=1)
+                  pyautogui.scroll(random.randint(-300, 300))
+                  pyautogui.press('shift')
+
+                  # Feature: Detection & Healing
+                  print(f"Titan Heartbeat: Systems Alive. Time: {time.strftime('%H:%M:%S')}")
+                  time.sleep(random.randint(30, 50))
+              except:
+                  pass
