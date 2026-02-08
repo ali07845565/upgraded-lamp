@@ -1,4 +1,4 @@
-name: DUBBED-DHAMAAL-V110-AUTO-PILOT
+name: DUBBED-DHAMAAL-V112-FORCE-RUN
 
 on:
   workflow_dispatch:
@@ -9,23 +9,24 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Titan Core & AI Setup
+      - name: 1. Setup & Requirements (Final Fix)
         run: |
           Stop-Service -Name wuauserv, SysMain -Force
-          pip install pyautogui psutil opencv-python numpy
+          # Force install specific versions to avoid crash
+          python -m pip install --upgrade pip
+          pip install pyautogui psutil --quiet
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Secure Tunnel
+      - name: 2. Tailscale Tunnel
         continue-on-error: true 
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-final-boss" --accept-routes --force-reauth
-          Start-Sleep -Seconds 25
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-v112" --accept-routes --force-reauth
+          Start-Sleep -Seconds 20
 
-      - name: 3. Create RDP & Ultimate Desktop Script
+      - name: 3. Create RDP & Debug-Enabled Script
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -34,78 +35,62 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
           
-          # Master Script with FIXED LINKS and GUEST MODE
-          $masterScript = @"
+          # Ye script ab crash hone par Error File banayegi
+          $debugScript = @"
           import os
           import time
           import subprocess
-          import pyautogui
-          import random
-          import psutil
+          import sys
 
-          # --- FIXED LINKS ADDED BY TITAN ---
-          links = [
-              "https://youtu.be/oiyYa3IL2Rc?si=LnzHB2SnxLvotRp-",
-              "https://youtu.be/OXuTuHQqB7s?si=hsLjg-WN4Kddl2en",
-              "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G0",
-              "https://youtu.be/z25lo2mogbk?si=RDQn25eKVGl6u8Dy",
-              "https://youtu.be/ZkJlQ_q7x5Q?si=5vafU9AuYNTZcp5E"
-          ]
+          # Logs create karne ke liye
+          log_file = r'C:\Users\Public\Desktop\error_log.txt'
           
-          chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-          
-          print("Launching 25 Profiles in Invisible Stealth Mode...")
-          for i in range(25): # 25 Best Features / Profiles
-              url = links[i % len(links)]
-              profile = f'--user-data-dir=C:\\Profiles\\Titan_{i}'
-              flags = [
-                  chrome_path, profile, 
-                  '--guest',                # No Login Required
-                  '--no-first-run',         # Skip Welcome Screen
-                  '--no-sandbox', 
-                  '--mute-audio', 
-                  '--disable-blink-features=AutomationControlled',
-                  '--window-size=500,350',  # Optimized Size
-                  url
+          def log_error(msg):
+              with open(log_file, 'a') as f:
+                  f.write(f"[{time.strftime('%H:%M:%S')}] {msg}\n")
+
+          try:
+              log_error("Script Started Successfully")
+              
+              links = [
+                  "https://youtu.be/oiyYa3IL2Rc?si=LnzHB2SnxLvotRp-",
+                  "https://youtu.be/OXuTuHQqB7s?si=hsLjg-WN4Kddl2en",
+                  "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G0",
+                  "https://youtu.be/z25lo2mogbk?si=RDQn25eKVGl6u8Dy",
+                  "https://youtu.be/ZkJlQ_q7x5Q?si=5vafU9AuYNTZcp5E"
               ]
-              subprocess.Popen(flags)
-              time.sleep(3)
+              
+              chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
+              
+              if not os.path.exists(chrome_path):
+                  log_error("Chrome Path NOT FOUND!")
+                  sys.exit()
 
-          # --- AUTOMOTIVE SYSTEM LOGIC ---
-          while True:
-              try:
-                  # Feature: Smart Window Focus
-                  pyautogui.keyDown('alt')
-                  pyautogui.press('tab')
-                  pyautogui.keyUp('alt')
-                  time.sleep(2)
+              print("Launching Browsers... Check Desktop for logs if it crashes.")
+              
+              for i in range(15): # Reduced to 15 for stability
+                  try:
+                      url = links[i % len(links)]
+                      profile = f'--user-data-dir=C:\\Profiles\\Titan_{i}'
+                      # Minimal flags to ensure it opens
+                      cmd = [chrome_path, profile, '--guest', '--no-first-run', '--mute-audio', url]
+                      subprocess.Popen(cmd)
+                      log_error(f"Profile {i} Launched")
+                      time.sleep(5)
+                  except Exception as e:
+                      log_error(f"Failed to launch profile {i}: {str(e)}")
 
-                  # Feature: Organic Click & Play
-                  pyautogui.click(random.randint(200, 400), random.randint(150, 300))
-                  pyautogui.press('k') # Force Play Toggle
-                  
-                  # Feature: Auto-Healing (Refresh if 0% Network)
-                  net_before = psutil.net_io_counters().bytes_recv
-                  time.sleep(15)
-                  if psutil.net_io_counters().bytes_recv == net_before:
-                      print("Network Stuck! Auto-Refreshing...")
-                      pyautogui.press('f5')
-                  
-                  # Feature: Human-like Scrolling
-                  pyautogui.scroll(random.randint(-200, 200))
-                  pyautogui.press('shift')
-                  
-                  print(f"Titan Status: Watching... {time.strftime('%H:%M:%S')}")
-              except:
-                  pass
+              print("Running Anti-Freeze. Keep this window open.")
+              while True:
+                  time.sleep(60)
+
+          except Exception as e:
+              log_error(f"CRITICAL SCRIPT ERROR: {str(e)}")
           "@
-          $masterScript | Out-File -FilePath "C:\Users\Public\Desktop\RUN_TITAN_ULTIMATE.py" -Encoding ascii
+          $debugScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_V112.py" -Encoding ascii
 
-      - name: 4. Final Success Confirmation
+      - name: 4. Final Success
         run: |
-          Write-Host "############################################"
-          Write-Host "STATUS: READY TO GO!"
-          Write-Host "1. Connect RDP (User: RDP | Pass: Admin@Watch786)"
-          Write-Host "2. Run 'RUN_TITAN_ULTIMATE.py' on Desktop."
-          Write-Host "############################################"
+          Write-Host "RDP User: RDP | Pass: Admin@Watch786"
+          Write-Host "Run 'TITAN_V112.py' from Desktop."
           Start-Sleep -Seconds 9000
