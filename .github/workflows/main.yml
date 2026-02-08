@@ -1,4 +1,4 @@
-name: DUBBED-DHAMAAL-V115-GOD-AUTO
+name: TITAN-EMPIRE-V121-FINAL
 
 on:
   workflow_dispatch:
@@ -9,22 +9,22 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Engine & Chrome Setup
+      - name: 1. Core Setup
         run: |
           Stop-Service -Name wuauserv, SysMain -Force
           pip install psutil pyautogui --quiet
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Secure Tunnel
+      - name: 2. Tailscale Tunnel
         continue-on-error: true 
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-god-auto" --accept-routes --force-reauth
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-empire" --accept-routes --force-reauth
           Start-Sleep -Seconds 20
 
-      - name: 3. Create RDP & Inject Auto-Start Logic
+      - name: 3. Create RDP & Mega-Automatic Script
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -32,16 +32,16 @@ jobs:
               New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
-          
-          # Master Script with 5 Fixed Links & Guest Mode
-          $masterScript = @"
+
+          $empireScript = @"
           import os
           import time
           import subprocess
-          import pyautogui
+          import psutil
+          import shutil
           import random
 
-          # --- AAPKE 5 LINKS (FIXED) ---
+          # Aapke 5 Links (Divided into 25 profiles)
           links = [
               "https://youtu.be/oiyYa3IL2Rc?si=LnzHB2SnxLvotRp-",
               "https://youtu.be/OXuTuHQqB7s?si=hsLjg-WN4Kddl2en",
@@ -51,47 +51,60 @@ jobs:
           ]
           
           chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-          
-          # Wait for desktop to load
-          time.sleep(10)
-          
-          print("TITAN GOD-MODE: Launching 25 Profiles...")
-          for i in range(25):
-              try:
+          profile_base = r'C:\Users\Public\TitanProfiles'
+
+          def system_flush():
+              print("[AI] Flushing System RAM & Old Cache...")
+              for proc in psutil.process_iter(['name']):
+                  if proc.info['name'] == 'chrome.exe':
+                      try: proc.kill()
+                      except: pass
+              time.sleep(5)
+              if os.path.exists(profile_base):
+                  try: shutil.rmtree(profile_base)
+                  except: pass
+              os.makedirs(profile_base, exist_ok=True)
+
+          def start_empire():
+              print("[AI] Generating 25 Secure Profiles with VPN & 144p Shield...")
+              for i in range(25):
+                  # Har link 5 baar repeat hoga (5*5=25)
                   url = links[i % len(links)]
-                  profile = f'--user-data-dir=C:\\Users\\Public\\T_{i}'
+                  p_dir = os.path.join(profile_base, f'Empire_{i}')
+                  
                   flags = [
-                      chrome_path, profile, '--guest', '--no-first-run', 
-                      '--mute-audio', '--window-size=500,400', 
-                      '--disable-blink-features=AutomationControlled', url
+                      chrome_path, 
+                      f'--user-data-dir={p_dir}', 
+                      '--no-first-run', 
+                      '--mute-audio', 
+                      '--window-size=450,350',
+                      '--force-device-scale-factor=0.4', # Extreme 144p Mode
+                      '--disable-blink-features=AutomationControlled',
+                      '--disable-infobars',
+                      '--no-sandbox',
+                      url
                   ]
                   subprocess.Popen(flags)
-                  time.sleep(4)
-              except:
-                  pass
+                  print(f"Profile {i+1} Live: Link { (i%5)+1 }")
+                  time.sleep(4) # CPU Stability Delay
 
-          # Anti-Freeze Loop (Human Activity)
           while True:
-              try:
-                  pyautogui.press('shift')
-                  time.sleep(60)
-              except:
-                  pass
+              system_flush()
+              start_empire()
+              print("[TIMER] 4-Hour Session Started. Auto-Reset active.")
+              time.sleep(14400) # 4 Hours Cycle
           "@
           
-          # Save to Public Desktop
-          $masterScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_FINAL.py" -Encoding ascii
-          
-          # AUTO-START INJECTION: Login hote hi chalne ke liye
-          $startupPath = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
-          $masterScript | Out-File -FilePath "$startupPath\TitanAuto.pyw" -Encoding ascii
+          # Desktop Files
+          $empireScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_EMPIRE.py" -Encoding ascii
+          "@echo off`npython C:\Users\Public\Desktop\TITAN_EMPIRE.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_EMPIRE.bat" -Encoding ascii
 
-      - name: 4. Final Success Confirmation
+      - name: 4. Final Instruction
         run: |
           Write-Host "############################################"
-          Write-Host "STATUS: 100% AUTOMATIC GOD-MODE READY"
-          Write-Host "1. Connect RDP (User: RDP | Pass: Admin@Watch786)"
-          Write-Host "2. Login karte hi 10 second wait karein."
-          Write-Host "3. Browsers khud khul jayenge!"
+          Write-Host "V121 EMPIRE SYSTEM IS READY!"
+          Write-Host "1. Login RDP (Admin@Watch786)"
+          Write-Host "2. START_EMPIRE.bat par Double-Click karein."
+          Write-Host "3. 25 Profiles automatic links ke saath khulengi."
           Write-Host "############################################"
           Start-Sleep -Seconds 9000
