@@ -1,4 +1,4 @@
-name: DUBBED-DHAMAAL-V105-INFINITE
+name: DUBBED-DHAMAAL-V106-FINAL-BOSS
 
 on:
   workflow_dispatch:
@@ -22,16 +22,18 @@ jobs:
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
           $randomID = Get-Random -Minimum 1000 -Maximum 9999
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-final-$randomID" --accept-routes --force-reauth
-          Start-Sleep -Seconds 20
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-boss-$randomID" --accept-routes --force-reauth
+          Start-Sleep -Seconds 30
           & "$env:ProgramFiles\Tailscale\tailscale.exe" status
 
-      - name: 3. Registry Hacks (Anti-Freeze & GPU)
+      - name: 3. Registry Hacks (Fix Black Screen & 0% Network)
         run: |
           $regPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
           if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force }
           Set-ItemProperty -Path $regPath -Name "BackgroundModeEnabled" -Value 1
+          # Ye registry key Chrome ko hamesha 'Focus' mein rakhti hai
           Set-ItemProperty -Path $regPath -Name "HardwareAccelerationModeEnabled" -Value 1
+          
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           if (!(Get-LocalUser -Name "RDP" -ErrorAction SilentlyContinue)) {
@@ -39,10 +41,10 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-      - name: 4. Launch "Infinite Loop" Matrix
+      - name: 4. Launch "Infinite Loop" Matrix (15 Profiles)
         run: |
           $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-          # Aapke 5 Links
+          # Aapke Specific 5 Links
           $links = @(
             "https://youtu.be/oiyYa3IL2Rc?si=LnzHB2SnxLvotRp-",
             "https://youtu.be/OXuTuHQqB7s?si=hsLjg-WN4Kddl2en",
@@ -57,17 +59,17 @@ jobs:
               "--user-data-dir=C:\Profiles\Titan_$i",
               "--no-sandbox",
               "--disable-blink-features=AutomationControlled",
-              "--disable-features=CalculateNativeWinOcclusion",
-              "--force-device-scale-factor=0.5",
+              "--disable-features=CalculateNativeWinOcclusion", # 🔥 YE 0% NETWORK KA ILAJ HAI
+              "--force-device-scale-factor=0.6",
               "--mute-audio",
               "--incognito",
               "$url"
             )
             Start-Process $chrome -ArgumentList $flags
-            Start-Sleep -Seconds 8
+            Start-Sleep -Seconds 10
           }
 
-      - name: 5. Run "Titan-20" Super AI Brain
+      - name: 5. Run Super AI Brain (Auto-144p & Anti-Freeze)
         shell: python
         env:
           PYTHONIOENCODING: utf-8
@@ -76,43 +78,52 @@ jobs:
           import time
           import random
           import psutil
+          import sys
 
-          print("--- V105 INFINITE STARTING ---")
-          time.sleep(60) # Wait for all tabs to load
+          print("--- V106 FINAL BOSS ACTIVE ---")
+          time.sleep(60) # Wait for browsers to settle
 
-          def force_144p():
-              # Feature: Automatic Quality Selector (144p)
-              pyautogui.press('s') # Settings shortcut
+          def set_144p():
+              # Shortcut keys for YouTube 144p (Settings > Quality > 144p)
+              pyautogui.press('s')
               time.sleep(1)
               for _ in range(5): pyautogui.press('up')
               pyautogui.press('enter')
               time.sleep(1)
               pyautogui.press('down')
               pyautogui.press('enter')
+              print("[LOG] Forced 144p Quality")
 
           while True:
               try:
-                  # Feature: Smart Window Cycling
+                  # Feature: Smart Window Switching
                   pyautogui.keyDown('alt')
                   pyautogui.press('tab')
                   pyautogui.keyUp('alt')
                   time.sleep(2)
 
-                  # Feature: Interaction (Anti-0% Network)
-                  pyautogui.click(random.randint(400, 800), random.randint(300, 600))
-                  pyautogui.press('k') # Force Play
+                  # Feature: Human-like Activity (Prevents 0% Network)
+                  # Randomly click to keep video playing
+                  pyautogui.click(random.randint(300, 900), random.randint(200, 600))
+                  pyautogui.press('k') # Toggle Play
                   
-                  # Feature: Force 144p occasionally
-                  if random.random() < 0.1: 
-                      pyautogui.press('1') # Shortcut for 144p (if active)
+                  # Feature: Auto-Healing (Refresh if network dies)
+                  net_stat = psutil.net_io_counters().bytes_recv
+                  time.sleep(5)
+                  if psutil.net_io_counters().bytes_recv == net_stat:
+                      print("[WARNING] Zero Data Flow! Refreshing...")
+                      pyautogui.press('f5')
                   
-                  # Feature: Human-like Movements
-                  pyautogui.moveTo(random.randint(100, 1000), random.randint(100, 700), duration=1)
-                  pyautogui.scroll(random.randint(-300, 300))
-                  pyautogui.press('shift')
+                  # Feature: Force 144p randomly
+                  if random.random() < 0.05: 
+                      set_144p()
 
-                  # Feature: Detection & Healing
-                  print(f"Titan Heartbeat: Systems Alive. Time: {time.strftime('%H:%M:%S')}")
-                  time.sleep(random.randint(30, 50))
-              except:
-                  pass
+                  # Feature: Anti-Sleep Movements
+                  pyautogui.moveTo(random.randint(100, 1000), random.randint(100, 700), duration=1)
+                  pyautogui.press('shift')
+                  
+                  print(f"Titan Heartbeat: Network Active at {time.strftime('%H:%M:%S')}")
+                  time.sleep(random.randint(40, 70))
+              except Exception as e:
+                  print(f"Self-Fixing Error: {e}")
+                  time.sleep(10)
