@@ -1,4 +1,4 @@
-name: DUBBED-DHAMAAL-V24-ULTRA-AI
+name: DUBBED-DHAMAAL-V27-ULTIMATE
 
 on:
   workflow_dispatch:
@@ -9,34 +9,51 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. AI & Graphics Core Setup
+      - name: 1. Setup Graphics & AI Engine
         run: |
           Stop-Service -Name wuauserv, SysMain -Force
           pip install google-genai pyautogui opencv-python numpy
           choco install googlechrome --accept-license -y
 
-      - name: 2. Registry Hack (Anti-Freeze & GPU)
+      - name: 2. Tailscale Secure Login (IP & Link)
         run: |
-          # Windows ko background rendering par majboor karna (0% Network Fix)
-          $regPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
-          if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force }
-          Set-ItemProperty -Path $regPath -Name "BackgroundModeEnabled" -Value 1
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
+          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
+          Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
+          Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
           
+          Write-Host "🔗 Connecting to Tailscale..."
+          # Key se login ki koshish
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=dhamaal-v27 --accept-routes --force-reauth
+          
+          $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
+          if (-not $tsIP) {
+              Write-Host "⚠️ Key failed! Login using this QR/Link below:"
+              & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname=dhamaal-v27 --qr
+          } else {
+              Write-Host "✅ TAILSCALE IP: $tsIP"
+          }
+
+      - name: 3. Create RDP & Anti-Freeze Registry
+        run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           if (!(Get-LocalUser -Name "RDP" -ErrorAction SilentlyContinue)) {
               New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
-          Write-Host "🚀 RDP Account Ready: Admin@Watch786"
+          
+          # 0% Network Fix: Force Windows to render background apps
+          $regPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
+          if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force }
+          Set-ItemProperty -Path $regPath -Name "BackgroundModeEnabled" -Value 1
+          Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'ExtendedUIHoverTime' -Value 1
 
-      - name: 3. Launch Advanced Matrix (Dubbed Dhamaal TV)
+      - name: 4. Launch Organic AI Matrix (Dubbed Dhamaal TV)
         run: |
           $channel = "Dubbed Dhamaal TV"
           $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-          # 15 Advanced Profiles with Anti-Fingerprint
           foreach ($i in 1..15) {
+            # Search Engine Link (Mimics real traffic)
             $searchUrl = "https://www.youtube.com/results?search_query=" + $channel.Replace(" ", "+")
             $flags = @(
               "--user-data-dir=C:\Profiles\AI_$i",
@@ -45,50 +62,44 @@ jobs:
               "--disable-background-timer-throttling",
               "--disable-backgrounding-occluded-windows",
               "--disable-renderer-backgrounding",
+              "--force-device-scale-factor=0.6",
               "--mute-audio",
-              "--force-device-scale-factor=0.5", # Taake screen par zyada windows fit hon
               "$searchUrl"
             )
             Start-Process $chrome -ArgumentList $flags
-            Start-Sleep -Seconds 12
+            Start-Sleep -Seconds 10
           }
 
-      - name: 4. Gemini-Powered "Human-Soul" Agent
+      - name: 5. Gemini-Powered "Human Soul" Agent
         shell: python
         run: |
           import pyautogui
           import time
           import random
-
-          print("V24 AI: Human Emulation Engine Started...")
-          time.sleep(60)
-
+          
+          print("AI Brain V27: Forcing Network Activity & Views...")
+          time.sleep(60) # Initial Loading
+          
           while True:
               try:
-                  # Feature 1: Smart Window Swapping (Alt+Tab)
+                  # Step 1: Switch Window
                   pyautogui.keyDown('alt')
                   pyautogui.press('tab')
-                  time.sleep(1)
                   pyautogui.keyUp('alt')
-                  
-                  # Feature 2: Organic Search Selection
-                  # Screen par click karega taake video select ho (Approx coordinates)
-                  pyautogui.click(random.randint(300, 700), random.randint(300, 500))
-                  
-                  # Feature 3: Force Play & Quality Command
-                  pyautogui.press('k') # Play
                   time.sleep(2)
-                  pyautogui.press('1') # 144p shortcut (agar player active ho)
                   
-                  # Feature 4: Random Engagement (Human Movement)
-                  pyautogui.moveTo(random.randint(100, 1000), random.randint(100, 700), duration=1)
-                  pyautogui.scroll(random.randint(-300, 300))
+                  # Step 2: Organic Interaction (Click to Play)
+                  # Click on the center to start video if stuck
+                  pyautogui.click(640, 480) 
+                  pyautogui.press('k') # Force Play
                   
-                  # Feature 5: Anti-Idle Pulse
-                  pyautogui.press('shift') 
+                  # Step 3: Anti-Freeze Scrolling
+                  pyautogui.scroll(random.randint(-500, 500))
                   
-                  print(f"AI: Activity Pulse sent at {time.strftime('%H:%M:%S')}. Monitoring Network...")
-                  time.sleep(random.randint(30, 60))
-              except Exception as e:
-                  print(f"AI Glitch: {e}")
+                  # Step 4: Quality Pulse (144p toggle)
+                  pyautogui.press('s') 
+                  
+                  print(f"AI: Active Pulse sent. Time: {time.strftime('%H:%M:%S')}")
+                  time.sleep(random.randint(40, 70))
+              except:
                   time.sleep(5)
