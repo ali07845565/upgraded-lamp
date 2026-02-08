@@ -1,4 +1,4 @@
-name: DUBBED-DHAMAAL-V107-VISIBLE
+name: DUBBED-DHAMAAL-V110-AUTO-PILOT
 
 on:
   workflow_dispatch:
@@ -9,21 +9,23 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. System & Chrome Setup
+      - name: 1. Titan Core & AI Setup
         run: |
-          pip install pyautogui psutil
+          Stop-Service -Name wuauserv, SysMain -Force
+          pip install pyautogui psutil opencv-python numpy
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Login
+      - name: 2. Tailscale Secure Tunnel
         continue-on-error: true 
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-visible" --accept-routes --force-reauth
-          Start-Sleep -Seconds 20
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname="titan-final-boss" --accept-routes --force-reauth
+          Start-Sleep -Seconds 25
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
 
-      - name: 3. Create RDP User & Auto-Start Script
+      - name: 3. Create RDP & Ultimate Desktop Script
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -32,42 +34,78 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
           
-          # Ye script RDP ke andar desktop par save ho jayegi
-          $startScript = @"
+          # Master Script with FIXED LINKS and GUEST MODE
+          $masterScript = @"
           import os
           import time
           import subprocess
-          
+          import pyautogui
+          import random
+          import psutil
+
+          # --- FIXED LINKS ADDED BY TITAN ---
           links = [
-              "https://www.youtube.com/watch?v=VIDEO1",
-              "https://www.youtube.com/watch?v=VIDEO2",
-              "https://www.youtube.com/watch?v=VIDEO3",
-              "https://www.youtube.com/watch?v=VIDEO4",
-              "https://www.youtube.com/watch?v=VIDEO5"
+              "https://youtu.be/oiyYa3IL2Rc?si=LnzHB2SnxLvotRp-",
+              "https://youtu.be/OXuTuHQqB7s?si=hsLjg-WN4Kddl2en",
+              "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G0",
+              "https://youtu.be/z25lo2mogbk?si=RDQn25eKVGl6u8Dy",
+              "https://youtu.be/ZkJlQ_q7x5Q?si=5vafU9AuYNTZcp5E"
           ]
           
           chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
           
-          for i in range(15):
+          print("Launching 25 Profiles in Invisible Stealth Mode...")
+          for i in range(25): # 25 Best Features / Profiles
               url = links[i % len(links)]
               profile = f'--user-data-dir=C:\\Profiles\\Titan_{i}'
-              flags = [chrome_path, profile, '--no-sandbox', '--mute-audio', '--start-maximized', url]
+              flags = [
+                  chrome_path, profile, 
+                  '--guest',                # No Login Required
+                  '--no-first-run',         # Skip Welcome Screen
+                  '--no-sandbox', 
+                  '--mute-audio', 
+                  '--disable-blink-features=AutomationControlled',
+                  '--window-size=500,350',  # Optimized Size
+                  url
+              ]
               subprocess.Popen(flags)
-              time.sleep(5)
+              time.sleep(3)
+
+          # --- AUTOMOTIVE SYSTEM LOGIC ---
+          while True:
+              try:
+                  # Feature: Smart Window Focus
+                  pyautogui.keyDown('alt')
+                  pyautogui.press('tab')
+                  pyautogui.keyUp('alt')
+                  time.sleep(2)
+
+                  # Feature: Organic Click & Play
+                  pyautogui.click(random.randint(200, 400), random.randint(150, 300))
+                  pyautogui.press('k') # Force Play Toggle
+                  
+                  # Feature: Auto-Healing (Refresh if 0% Network)
+                  net_before = psutil.net_io_counters().bytes_recv
+                  time.sleep(15)
+                  if psutil.net_io_counters().bytes_recv == net_before:
+                      print("Network Stuck! Auto-Refreshing...")
+                      pyautogui.press('f5')
+                  
+                  # Feature: Human-like Scrolling
+                  pyautogui.scroll(random.randint(-200, 200))
+                  pyautogui.press('shift')
+                  
+                  print(f"Titan Status: Watching... {time.strftime('%H:%M:%S')}")
+              except:
+                  pass
           "@
-          $startScript | Out-File -FilePath "C:\Users\Public\Desktop\Start_Browsers.py" -Encoding ascii
+          $masterScript | Out-File -FilePath "C:\Users\Public\Desktop\RUN_TITAN_ULTIMATE.py" -Encoding ascii
 
-      - name: 4. Anti-Freeze Activation
+      - name: 4. Final Success Confirmation
         run: |
-          # Force windows to keep session alive
-          reg add "HKLM\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /v UserAuthentication /t REG_DWORD /d 0 /f
-          reg add "HKCU\Control Panel\Desktop" /v ScreenSaveActive /t REG_SZ /d 0 /f
-
-      - name: 5. Waiting for RDP Connection
-        run: |
-          print "!!! ACTION REQUIRED !!!"
-          print "1. Connect via RDP using Tailscale IP"
-          print "2. Desktop par 'Start_Browsers.py' dikhega"
-          print "3. Use Right-Click karke 'Run with Python' karein"
-          print "Ab browser aapki screen par khulega aur 0% Network nahi aayega."
+          Write-Host "############################################"
+          Write-Host "STATUS: READY TO GO!"
+          Write-Host "1. Connect RDP (User: RDP | Pass: Admin@Watch786)"
+          Write-Host "2. Run 'RUN_TITAN_ULTIMATE.py' on Desktop."
+          Write-Host "############################################"
           Start-Sleep -Seconds 9000
