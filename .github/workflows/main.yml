@@ -1,0 +1,94 @@
+name: DUBBED-DHAMAAL-V24-ULTRA-AI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 9600
+
+    steps:
+      - name: 1. AI & Graphics Core Setup
+        run: |
+          Stop-Service -Name wuauserv, SysMain -Force
+          pip install google-genai pyautogui opencv-python numpy
+          choco install googlechrome --accept-license -y
+
+      - name: 2. Registry Hack (Anti-Freeze & GPU)
+        run: |
+          # Windows ko background rendering par majboor karna (0% Network Fix)
+          $regPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
+          if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force }
+          Set-ItemProperty -Path $regPath -Name "BackgroundModeEnabled" -Value 1
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
+          
+          $password = "Admin@Watch786"
+          $securePass = ConvertTo-SecureString $password -AsPlainText -Force
+          if (!(Get-LocalUser -Name "RDP" -ErrorAction SilentlyContinue)) {
+              New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
+              Add-LocalGroupMember -Group "Administrators" -Member "RDP"
+          }
+          Write-Host "🚀 RDP Account Ready: Admin@Watch786"
+
+      - name: 3. Launch Advanced Matrix (Dubbed Dhamaal TV)
+        run: |
+          $channel = "Dubbed Dhamaal TV"
+          $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+          # 15 Advanced Profiles with Anti-Fingerprint
+          foreach ($i in 1..15) {
+            $searchUrl = "https://www.youtube.com/results?search_query=" + $channel.Replace(" ", "+")
+            $flags = @(
+              "--user-data-dir=C:\Profiles\AI_$i",
+              "--no-sandbox",
+              "--disable-blink-features=AutomationControlled",
+              "--disable-background-timer-throttling",
+              "--disable-backgrounding-occluded-windows",
+              "--disable-renderer-backgrounding",
+              "--mute-audio",
+              "--force-device-scale-factor=0.5", # Taake screen par zyada windows fit hon
+              "$searchUrl"
+            )
+            Start-Process $chrome -ArgumentList $flags
+            Start-Sleep -Seconds 12
+          }
+
+      - name: 4. Gemini-Powered "Human-Soul" Agent
+        shell: python
+        run: |
+          import pyautogui
+          import time
+          import random
+
+          print("V24 AI: Human Emulation Engine Started...")
+          time.sleep(60)
+
+          while True:
+              try:
+                  # Feature 1: Smart Window Swapping (Alt+Tab)
+                  pyautogui.keyDown('alt')
+                  pyautogui.press('tab')
+                  time.sleep(1)
+                  pyautogui.keyUp('alt')
+                  
+                  # Feature 2: Organic Search Selection
+                  # Screen par click karega taake video select ho (Approx coordinates)
+                  pyautogui.click(random.randint(300, 700), random.randint(300, 500))
+                  
+                  # Feature 3: Force Play & Quality Command
+                  pyautogui.press('k') # Play
+                  time.sleep(2)
+                  pyautogui.press('1') # 144p shortcut (agar player active ho)
+                  
+                  # Feature 4: Random Engagement (Human Movement)
+                  pyautogui.moveTo(random.randint(100, 1000), random.randint(100, 700), duration=1)
+                  pyautogui.scroll(random.randint(-300, 300))
+                  
+                  # Feature 5: Anti-Idle Pulse
+                  pyautogui.press('shift') 
+                  
+                  print(f"AI: Activity Pulse sent at {time.strftime('%H:%M:%S')}. Monitoring Network...")
+                  time.sleep(random.randint(30, 60))
+              except Exception as e:
+                  print(f"AI Glitch: {e}")
+                  time.sleep(5)
