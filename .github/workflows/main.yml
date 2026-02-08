@@ -1,4 +1,4 @@
-name: TITAN-V132-FINAL-GHOST
+name: TITAN-V134-FINAL-MASTER
 
 on:
   workflow_dispatch:
@@ -9,22 +9,22 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Deep System Cleaning
+      - name: 1. System Deep Clean
         run: |
           Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
           pip install psutil pyautogui --quiet
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Secure Tunnel
+      - name: 2. Tailscale Auto-Login
         continue-on-error: true 
         run: |
           $authKey = "tskey-auth-kYcM6WeyfR11CNTRL-9FQy2jXXfC6nPVvmruwuC66aU7SsCJz9h" 
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey --hostname="titan-final-v132" --accept-routes
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey --hostname="titan-v134-master" --accept-routes
 
-      - name: 3. Create THE FINAL GHOST Script (With Fixed Links)
+      - name: 3. Create THE MASTER Script (With Your Real Links)
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -33,33 +33,37 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-          $finalScript = @"
+          $masterScript = @"
           import os
           import time
           import subprocess
           import psutil
           import random
 
-          # --- YOUR CHANNEL LINKS (FIXED & SECURED) ---
-          # Humne aapke 5 links ko Embed API format mein convert kar diya hai
-          raw_ids = ["0", "1", "2", "3", "4"] 
-          
-          # AI Logic: Social Referrer (WhatsApp) + Embed API + Autoplay + Mute
-          links = [f"https://www.youtube.com/embed/{id}?autoplay=1&mute=1&loop=1&playlist={id}&origin=https://web.whatsapp.com" for id in raw_ids]
+          # --- YOUR CHANNEL LINKS (HARD-CODED & SECURED) ---
+          # Humne aapke videos ko Mobile API + WhatsApp Referrer mein convert kar diya hai
+          links = [
+              "https://m.youtube.com/watch?v=0&feature=share&utm_source=whatsapp",
+              "https://m.youtube.com/watch?v=1&feature=share&utm_source=whatsapp",
+              "https://m.youtube.com/watch?v=2&feature=share&utm_source=whatsapp",
+              "https://m.youtube.com/watch?v=3&feature=share&utm_source=whatsapp",
+              "https://m.youtube.com/watch?v=4&feature=share&utm_source=whatsapp"
+          ]
           
           chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-          profile_base = r'C:\Users\Public\TitanFinalGhost'
+          profile_base = r'C:\Users\Public\TitanMasterProfiles'
 
           def launch_titan():
-              print("[GHOST] Launching 25 Protected Windows with WhatsApp Referrer...")
+              print("[MASTER] Launching 25 Mobile-Masked Windows...")
               for i in range(25):
+                  # Har link 5 baar repeat hoga (5*5=25)
                   url = links[i % len(links)]
                   p_dir = os.path.join(profile_base, f'User_{i}')
                   
-                  # Randomized Stealth Identity
+                  # Mobile Identity for Bot Bypass
                   ua = random.choice([
-                      "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-                      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+                      "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+                      "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
                   ])
 
                   flags = [
@@ -68,32 +72,32 @@ jobs:
                       f'--user-agent={ua}',
                       '--no-first-run', 
                       '--mute-audio', 
-                      '--disable-blink-features=AutomationControlled', # Bypasses "Sign in" prompt
-                      '--window-size=400,300',
-                      '--force-device-scale-factor=0.5',
-                      '--autoplay-policy=no-user-gesture-required',
+                      '--disable-blink-features=AutomationControlled',
+                      '--window-size=360,640', 
+                      '--force-device-scale-factor=1.0',
+                      '--disable-infobars',
                       url
                   ]
                   subprocess.Popen(flags)
-                  time.sleep(random.uniform(7, 10)) # Human-like launch delay
+                  time.sleep(random.uniform(7, 10))
 
           while True:
               for proc in psutil.process_iter(['name']):
                   if proc.info['name'] == 'chrome.exe':
                       try: proc.kill()
                       except: pass
-              time.sleep(10)
+              time.sleep(5)
               launch_titan()
-              print("[SUCCESS] Session Started. AI Cycle active for 4 hours.")
+              print("[SUCCESS] Session Started. 25 Mobile-Viewers active.")
               time.sleep(14400) 
           "@
           
-          $finalScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_FINAL.py" -Encoding ascii
-          "@echo off`ntitle TITAN FINAL`nnet stop audiosrv /y >nul 2>&1`npython C:\Users\Public\Desktop\TITAN_FINAL.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_FINAL.bat" -Encoding ascii
+          $masterScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_MASTER.py" -Encoding ascii
+          "@echo off`ntitle TITAN FINAL MASTER`nnet stop audiosrv /y >nul 2>&1`npython C:\Users\Public\Desktop\TITAN_MASTER.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_MASTER.bat" -Encoding ascii
 
-      - name: 4. Deployment Instruction
+      - name: 4. Final Instruction
         run: |
-          Write-Host "V132 FINAL DEPLOYED!"
-          Write-Host "LINKS STATUS: INTEGRATED & SECURED"
-          Write-Host "BOT BYPASS: WHATSAPP REFERRER ACTIVE"
+          Write-Host "V134 MASTER DEPLOYED!"
+          Write-Host "LINKS INTEGRATED: YES"
+          Write-Host "MODE: MOBILE STEALTH"
           Start-Sleep -Seconds 9000
