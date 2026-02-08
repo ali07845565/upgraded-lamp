@@ -1,4 +1,4 @@
-name: TITAN-V129-OVERLORD-FINAL
+name: TITAN-V131-OMNI-BYPASS
 
 on:
   workflow_dispatch:
@@ -9,22 +9,23 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. System Deep-Clean & Optimization
+      - name: 1. Deep System Hardening
         run: |
+          # Audio aur फालतू services ko band karna resources bachane ke liye
           Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
-          pip install psutil pyautogui opencv-python numpy --quiet
+          pip install psutil pyautogui numpy --quiet
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Auto-Login (Secure Tunnel)
+      - name: 2. Tailscale Secure Tunnel (Auth Key)
         continue-on-error: true 
         run: |
           $authKey = "tskey-auth-kYcM6WeyfR11CNTRL-9FQy2jXXfC6nPVvmruwuC66aU7SsCJz9h" 
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey --hostname="titan-overlord-v129" --accept-routes
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey --hostname="titan-omni-v131" --accept-routes
 
-      - name: 3. Create Overlord AI Master Script (Links & Auto-Comment)
+      - name: 3. Create THE OMNI-BYPASS Master Script
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -33,7 +34,7 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-          $overlordScript = @"
+          $omniScript = @"
           import os
           import time
           import subprocess
@@ -41,82 +42,78 @@ jobs:
           import random
           import pyautogui
 
-          # --- YOUR CHANNEL LINKS (AI EMBED LOGIC) ---
-          links = [
-              "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G00",
-              "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G01",
-              "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G02",
-              "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G03",
-              "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G04"
-          ]
-
-          comments = ["Amazing video!", "Very helpful content.", "Keep it up!", "Great explanation.", "I watched it twice!"]
+          # --- ADVANCED OMNI-BYPASS LINKS ---
+          # 1. Embed API + 2. Social Referrer + 3. Loop Logic
+          raw_video_ids = ["0", "1", "2", "3", "4"] 
+          
+          # AI Logic: Converting to Ghost Links with WhatsApp Referrer Spoofing
+          links = [f"https://www.youtube.com/embed/{vid}?autoplay=1&mute=1&loop=1&playlist={vid}&rel=0&controls=0&origin=https://web.whatsapp.com" for vid in raw_video_ids]
           
           chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-          profile_base = r'C:\Users\Public\TitanOverlordProfiles'
+          profile_base = r'C:\Users\Public\TitanOmniProfiles'
 
-          def launch_overlord():
-              print("[AI] Initializing Overlord Multi-Fingerprint Launch...")
+          def launch_omni_session():
+              print("[AI-OMNI] Deploying Stealth Fingerprints...")
               for i in range(25):
                   url = links[i % len(links)]
-                  p_dir = os.path.join(profile_base, f'Overlord_User_{i}')
+                  p_dir = os.path.join(profile_base, f'OmniUser_{i}')
                   
-                  # AI Mix User-Agents (Windows, Mac, Android Tablet)
+                  # Hybrid User-Agents (Changing every launch)
                   ua = random.choice([
-                      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36",
-                      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/119.0.0.0 Safari/537.36",
-                      "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) Safari/604.1"
+                      "Mozilla/5.0 (Linux; Android 13; SM-X906B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                      "Mozilla/5.0 (iPad; CPU OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
+                      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
                   ])
 
                   flags = [
                       chrome_path, 
                       f'--user-data-dir={p_dir}', 
                       f'--user-agent={ua}',
-                      '--no-first-run', '--mute-audio', 
-                      '--disable-blink-features=AutomationControlled',
+                      '--no-first-run', 
+                      '--mute-audio', 
+                      '--disable-blink-features=AutomationControlled', # Crucial for Bot Bypass
                       '--window-size=400,300',
-                      '--force-device-scale-factor=0.4', # Lowest Quality for Max Speed
-                      f'{url}&autoplay=1&mute=1&loop=1'
+                      '--force-device-scale-factor=0.5',
+                      '--disable-infobars',
+                      '--no-sandbox',
+                      '--disable-gpu',
+                      url
                   ]
                   subprocess.Popen(flags)
-                  time.sleep(random.uniform(5, 8)) # AI Natural Delay
-
-          def ai_activity():
-              # AI moves mouse and scrolls to look like a real person
-              try:
-                  pyautogui.scroll(random.randint(-100, 100))
-                  pyautogui.moveRel(random.randint(-20, 20), random.randint(-20, 20))
-              except: pass
+                  # AI randomized interval to prevent IP pattern detection
+                  time.sleep(random.uniform(6, 10))
 
           while True:
-              # Deep Clean before every session
+              # Kill old processes and clear memory
               for proc in psutil.process_iter(['name']):
                   if proc.info['name'] == 'chrome.exe':
                       try: proc.kill()
                       except: pass
-              time.sleep(10)
+              time.sleep(5)
               
-              launch_overlord()
-              print("[SYSTEM] 25 High-Security Windows Live. Monitoring for 4 hours.")
+              launch_omni_session()
+              print("[SYSTEM] Omni-Bypass Session Active. AI Monitoring...")
               
-              # Active monitoring loop
-              for _ in range(120): # Check activity every 2 mins
-                  ai_activity()
-                  time.sleep(120)
+              # AI Human Mimicry Loop (Moves mouse to keep session alive)
+              for _ in range(240): # 4 Hours
+                  try:
+                      pyautogui.moveRel(random.randint(-5, 5), random.randint(-5, 5))
+                  except: pass
+                  time.sleep(60)
           "@
           
-          $overlordScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_OVERLORD.py" -Encoding ascii
+          $omniScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_OMNI.py" -Encoding ascii
           
-          # Advance AI .bat File Integration
-          $batContent = "@echo off`ntitle TITAN OVERLORD AI COMMAND`ncolor 0C`necho [AI] Initializing Lockdown Breaker...`nnet stop audiosrv /y >nul 2>&1`necho [AI] Fingerprint Scrambling: ON`necho [AI] Multi-Profile Link Distribution: ON`npython C:\Users\Public\Desktop\TITAN_OVERLORD.py`npause"
-          $batContent | Out-File -FilePath "C:\Users\Public\Desktop\START_OVERLORD.bat" -Encoding ascii
+          # Advance AI .bat with Command-Line Proxy logic
+          $batContent = "@echo off`ntitle TITAN OMNI-BYPASS COMMANDER`ncolor 0D`necho [AI] Flushing Network Caches...`nipconfig /flushdns >nul`necho [AI] Bypassing Google Bot-Detection Sensors...`nnet stop audiosrv /y >nul 2>&1`necho [AI] Activating Social Referrer Spoofing...`npython C:\Users\Public\Desktop\TITAN_OMNI.py`npause"
+          $batContent | Out-File -FilePath "C:\Users\Public\Desktop\START_OMNI.bat" -Encoding ascii
 
-      - name: 4. Final Deployment
+      - name: 4. Deployment Complete
         run: |
           Write-Host "############################################"
-          Write-Host "V129 TITANIUM OVERLORD IS LIVE!"
-          Write-Host "1. RDP Login (Admin@Watch786)"
-          Write-Host "2. Run 'START_OVERLORD.bat' on Desktop"
-          Write-Host "3. Watchtime Drop Probability: 0.1%"
+          Write-Host "V131 OMNI-BYPASS ENGINE IS LIVE!"
+          Write-Host "REFERRER: WhatsApp Web (Spoofed)"
+          Write-Host "BOT-BYPASS: AutomationControlled=Disabled"
+          Write-Host "Just run START_OMNI.bat and watch the magic!"
           Write-Host "############################################"
           Start-Sleep -Seconds 9000
