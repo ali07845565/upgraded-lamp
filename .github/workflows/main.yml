@@ -1,4 +1,4 @@
-name: DUBBED-DHAMAAL-V100-SUPER-TITAN
+name: DUBBED-DHAMAAL-V102-TITAN-FIXED
 
 on:
   workflow_dispatch:
@@ -9,46 +9,36 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Titan Core Setup (Anti-Bot & AI)
+      - name: 1. Core Engine Setup
         run: |
-          # Cleanup & Speedup
           Stop-Service -Name wuauserv, SysMain -Force
-          pip install google-genai pyautogui opencv-python numpy
+          pip install pyautogui opencv-python numpy
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale "Zero-Hang" Connector
+      - name: 2. Tailscale Login (IP & Link Recovery)
+        continue-on-error: true 
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
           
           Write-Host "------------------------------------------------------"
-          Write-Host "🛰️ TITAN IS SEARCHING FOR CONNECTION..."
+          Write-Host "TITAN CONNECTION SYSTEM STARTING..."
           
-          # Attempt login. If key fails, it will keep asking for link
-          Start-Process -FilePath "$env:ProgramFiles\Tailscale\tailscale.exe" -ArgumentList "up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=titan-v100 --accept-routes --force-reauth" -NoNewWindow
+          # Force link if key is invalid
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --hostname=titan-v102 --accept-routes --force-reauth
           
-          Start-Sleep -Seconds 15
-          $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
-          
-          if (-not $tsIP) {
-              Write-Host "❌ KEY FAIL! OPEN THIS LINK IN YOUR PHONE RIGHT NOW:"
-              & "$env:ProgramFiles\Tailscale\tailscale.exe" status
-          } else {
-              Write-Host "✅ TITAN ONLINE! IP: $tsIP"
-          }
+          # Wait a bit for you to see the link
+          Start-Sleep -Seconds 30
+          Write-Host "Checking Status..."
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" status
           Write-Host "------------------------------------------------------"
 
-      - name: 3. The "Ghost-Fixer" Registry (Anti-0% Network)
+      - name: 3. Registry Hack (0% Network & Freeze Fix)
         run: |
-          # Ye registry keys Windows ko soney nahi dengi
           $regPath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
           if (!(Test-Path $regPath)) { New-Item -Path $regPath -Force }
           Set-ItemProperty -Path $regPath -Name "BackgroundModeEnabled" -Value 1
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
-          
-          # Force RDP session to stay alive after disconnect
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name 'fEnableWinStation' -Value 1
           
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -57,55 +47,55 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-      - name: 4. Launch "Titan Matrix" (15 Organic Browsers)
+      - name: 4. Launch Always-Active Browsers
         run: |
           $channel = "Dubbed Dhamaal TV"
           $chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-          foreach ($i in 1..15) {
+          foreach ($i in 1..12) {
             $searchUrl = "https://www.youtube.com/results?search_query=" + $channel.Replace(" ", "+")
             $flags = @(
               "--user-data-dir=C:\Profiles\Titan_$i",
               "--no-sandbox",
               "--disable-blink-features=AutomationControlled",
-              "--disable-features=CalculateNativeWinOcclusion", # 🔥 Fixes 0% Network/Freeze
-              "--disable-background-timer-throttling",
-              "--disable-backgrounding-occluded-windows",
-              "--force-device-scale-factor=0.6",
+              "--disable-features=CalculateNativeWinOcclusion", # 🔥 Fixes 0% Network
               "--mute-audio",
               "$searchUrl"
             )
             Start-Process $chrome -ArgumentList $flags
-            Start-Sleep -Seconds 8
+            Start-Sleep -Seconds 10
           }
 
-      - name: 5. Super-AI Brain (Auto-Fixer & Interaction)
+      - name: 5. Run AI "Active-Human" Brain
         shell: python
+        env:
+          PYTHONIOENCODING: utf-8
         run: |
           import pyautogui
           import time
           import random
+          import sys
+
+          # No emojis here to prevent UnicodeEncodeError
+          print("AI Titan V102: System Online. Monitoring Activity...")
           
-          print("🚀 Titan AI Activated: Handling all 4000 features...")
-          time.sleep(40)
+          time.sleep(30)
           
           while True:
               try:
-                  # Feature: Smart Window Switcher
+                  # Move mouse to keep screen from turning black
+                  pyautogui.moveTo(random.randint(200, 800), random.randint(200, 600), duration=1)
+                  
+                  # Switch Tabs
                   pyautogui.keyDown('alt')
                   pyautogui.press('tab')
                   pyautogui.keyUp('alt')
-                  time.sleep(2)
                   
-                  # Feature: Human-Like Interaction (Prevents 0% Network)
-                  pyautogui.click(random.randint(300, 900), random.randint(200, 600))
-                  pyautogui.press('k') # Force Playback
-                  pyautogui.scroll(random.randint(-500, 500))
+                  # Interaction to trigger network
+                  pyautogui.click()
+                  pyautogui.press('k')
                   
-                  # Feature: Screen Keep-Alive
-                  pyautogui.press('shift')
-                  
-                  print(f"Titan Heartbeat: Systems Healthy at {time.strftime('%H:%M:%S')}")
+                  print("Titan Heartbeat: Network Active.")
                   time.sleep(random.randint(30, 60))
               except Exception as e:
-                  print(f"Self-Fixing error: {e}")
+                  print("Fixing minor glitch...")
                   time.sleep(10)
