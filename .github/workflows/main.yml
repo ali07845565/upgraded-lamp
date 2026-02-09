@@ -1,4 +1,4 @@
-name: TITAN-V163-BOT-FREE-ZONE
+name: TITAN-V172-CPU-OVERCLOCK
 
 on:
   workflow_dispatch:
@@ -9,79 +9,76 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Deep System Masking
+      - name: 1. CPU & RAM Overclock Logic
         run: |
-          Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
-          pip install psutil --quiet
-          winget install --id Mozilla.Firefox -e --silent --accept-source-agreements
+          # 64GB Virtual RAM setup
+          wmic pagefileset where name="C:\\pagefile.sys" set InitialSize=32768,MaximumSize=65536
+          # CPU Efficiency: Disabling visual shell & animations
+          reg add "HKCU\Control Panel\Desktop" /v MenuShowDelay /t REG_SZ /d 0 /f
+          reg add "HKLM\SYSTEM\CurrentControlSet\Control\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f
+          Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv, OneSyncSvc -Force
+          pip install pyautogui psutil --quiet
 
-      - name: 2. Tailscale Login
+      - name: 2. Tailscale Login (Check Stars)
         shell: powershell
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up
+          Write-Host "`n******************************************************"
+          Write-Host ">>> LOGIN LINK BELOW <<<" -ForegroundColor Yellow
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --accept-dns=false
+          Write-Host "******************************************************`n"
           Start-Sleep -Seconds 120
-          $tsIP = (& "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4)
-          Write-Host "SUCCESS! RDP IP: $tsIP" -ForegroundColor Green
 
-      - name: 3. Create THE NO-BOT Script
+      - name: 3. Deploy 40-Tabs Ultra-Efficient Script
         run: |
-          $password = "Admin@Watch786"
-          $securePass = ConvertTo-SecureString $password -AsPlainText -Force
-          if (!(Get-LocalUser -Name "RDP" -ErrorAction SilentlyContinue)) {
-              New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires
-              Add-LocalGroupMember -Group "Administrators" -Member "RDP"
-          }
+          $finalScript = @"
+          import os, time, subprocess, threading, pyautogui, random, psutil
 
-          $noBotScript = @"
-          import os, time, subprocess, psutil, random
+          # --- CPU PRIORITY BOT ---
+          def boost_cpu():
+              p = psutil.Process(os.getpid())
+              p.nice(psutil.HIGH_PRIORITY_CLASS) # Force Windows to give more CPU power
 
-          links = ["https://www.youtube.com/watch?v=oiyYa3IL2Rc", "https://www.youtube.com/watch?v=OXuTuHQqB7s"]
-          
-          # ZenMate + Auto Quality
-          EXTS = ["https://addons.mozilla.org/en-US/firefox/addon/zenmate-free-vpn-best/"]
+          def anti_sleep():
+              while True:
+                  time.sleep(random.randint(15, 40))
+                  pyautogui.press('scrolllock')
 
-          def launch_safe_zones():
+          def launch_browsers():
               ff_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
-              base_dir = r'C:\Users\Public\NoBotProfiles'
+              base_dir = r'C:\Users\Public\TitanUltra'
               
-              for i in range(10):
+              # Trying 40 Windows because of CPU & RAM Optimization
+              for i in range(40): 
                   p_dir = os.path.join(base_dir, str(i))
                   if not os.path.exists(p_dir): os.makedirs(p_dir)
                   
-                  # --- THE TRICK: Spoofing Language to Russia/Turkey ---
-                  # Is se Google bot filter disable kar deta hai
-                  url = random.choice(links)
-                  
-                  # Launching with specific locale (Russian)
-                  subprocess.Popen([ff_path, "-new-instance", "-profile", p_dir, "-no-remote", 
-                                  "-content-lang", "ru-RU", "-accept-lang", "ru-RU",
-                                  EXTS[0], url])
-                  
-                  print(f"Window {i+1} Ready. Select RUSSIA or TURKEY in ZenMate.")
-                  time.sleep(20)
+                  prefs_path = os.path.join(p_dir, "prefs.js")
+                  with open(prefs_path, "w") as f:
+                      f.write('user_pref("network.proxy.type", 1);\n')
+                      f.write('user_pref("network.proxy.http", "45.152.188.238");\n')
+                      f.write('user_pref("network.proxy.http_port", 3128);\n')
+                      f.write('user_pref("network.proxy.ssl", "45.152.188.238");\n')
+                      f.write('user_pref("network.proxy.ssl_port", 3128);\n')
+                      f.write('user_pref("permissions.default.image", 2);\n') # No images (Saves CPU)
+                      f.write('user_pref("media.volume_scale", "0.0");\n') # No sound (Saves CPU)
+                      f.write('user_pref("layers.acceleration.disabled", true);\n') # Disable GPU (Saves CPU)
+                      f.write('user_pref("datareporting.healthreport.uploadEnabled", false);\n')
+
+                  url = "https://www.youtube.com/watch?v=OXuTuHQqB7s0"
+                  subprocess.Popen([ff_path, "-new-instance", "-profile", p_dir, "-no-remote", url])
+                  print(f"Titan Tab {i+1} Launched.")
+                  time.sleep(random.randint(8, 15))
 
           if __name__ == "__main__":
-              launch_safe_zones()
+              boost_cpu()
+              threading.Thread(target=anti_sleep, daemon=True).start()
+              launch_browsers()
           "@
-          $noBotScript | Out-File -FilePath "C:\Users\Public\Desktop\NO_BOT_WATCH.py" -Encoding ascii
-          "@echo off`npython C:\Users\Public\Desktop\NO_BOT_WATCH.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_BOTFREE.bat" -Encoding ascii
+          $finalScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_ULTRA.py" -Encoding ascii
+          "@echo off`ntitle TITAN CPU OVERCLOCK`npython C:\Users\Public\Desktop\TITAN_ULTRA.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START.bat" -Encoding ascii
 
-      - name: 4. Auto IP Changer (10-Min Cycle)
-        run: |
-          $rotator = @"
-          import os, time, psutil, subprocess
-          while True:
-              time.sleep(600) # 10 Minutes
-              for p in psutil.process_iter(['name']):
-                  if 'firefox' in p.info['name'].lower(): p.kill()
-              time.sleep(5)
-              subprocess.Popen(['python', r'C:\Users\Public\Desktop\NO_BOT_WATCH.py'])
-          "@
-          $rotator | Out-File -FilePath "C:\Users\Public\Desktop\AUTO_ROTATOR.py" -Encoding ascii
-          "@echo off`npython C:\Users\Public\Desktop\AUTO_ROTATOR.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\RUN_ROTATOR.bat" -Encoding ascii
-
-      - name: 5. Final Keep-Alive
+      - name: 4. Keep-Alive
         run: Start-Sleep -Seconds 9000
