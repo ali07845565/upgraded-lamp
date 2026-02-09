@@ -1,4 +1,4 @@
-name: TITAN-V162-RUSSIAN-MAX
+name: TITAN-V163-BOT-FREE-ZONE
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Setup & Environment
+      - name: 1. Deep System Masking
         run: |
           Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
           pip install psutil --quiet
@@ -24,9 +24,9 @@ jobs:
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up
           Start-Sleep -Seconds 120
           $tsIP = (& "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4)
-          Write-Host "RDP IP: $tsIP" -ForegroundColor Green
+          Write-Host "SUCCESS! RDP IP: $tsIP" -ForegroundColor Green
 
-      - name: 3. Deploy Russian-Targeted Master Script
+      - name: 3. Create THE NO-BOT Script
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -35,52 +35,53 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-          $russianScript = @"
+          $noBotScript = @"
           import os, time, subprocess, psutil, random
 
-          # Aapke Links
           links = ["https://www.youtube.com/watch?v=oiyYa3IL2Rc", "https://www.youtube.com/watch?v=OXuTuHQqB7s"]
           
-          # Extensions: ZenMate + Russian Language Spoofer
-          EXTS = [
-              "https://addons.mozilla.org/en-US/firefox/addon/zenmate-free-vpn-best/",
-              "https://addons.mozilla.org/en-US/firefox/addon/youtube-auto-hd-quality-144p/"
-          ]
+          # ZenMate + Auto Quality
+          EXTS = ["https://addons.mozilla.org/en-US/firefox/addon/zenmate-free-vpn-best/"]
 
-          def launch_russian_session():
+          def launch_safe_zones():
               ff_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
-              base_dir = r'C:\Users\Public\RussiaProfile'
+              base_dir = r'C:\Users\Public\NoBotProfiles'
               
               for i in range(10):
                   p_dir = os.path.join(base_dir, str(i))
                   if not os.path.exists(p_dir): os.makedirs(p_dir)
                   
-                  # Firefox ko Russian language aur IP ke liye prepare karna
+                  # --- THE TRICK: Spoofing Language to Russia/Turkey ---
+                  # Is se Google bot filter disable kar deta hai
                   url = random.choice(links)
-                  subprocess.Popen([ff_path, "-new-instance", "-profile", p_dir, "-no-remote", EXTS[0], EXTS[1], url])
-                  print(f"Window {i} launched. Select RUSSIA in ZenMate.")
+                  
+                  # Launching with specific locale (Russian)
+                  subprocess.Popen([ff_path, "-new-instance", "-profile", p_dir, "-no-remote", 
+                                  "-content-lang", "ru-RU", "-accept-lang", "ru-RU",
+                                  EXTS[0], url])
+                  
+                  print(f"Window {i+1} Ready. Select RUSSIA or TURKEY in ZenMate.")
                   time.sleep(20)
 
           if __name__ == "__main__":
-              launch_russian_session()
+              launch_safe_zones()
           "@
-          $russianScript | Out-File -FilePath "C:\Users\Public\Desktop\RUSSIAN_WATCH.py" -Encoding ascii
-          "@echo off`npython C:\Users\Public\Desktop\RUSSIAN_WATCH.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_RUSSIAN.bat" -Encoding ascii
+          $noBotScript | Out-File -FilePath "C:\Users\Public\Desktop\NO_BOT_WATCH.py" -Encoding ascii
+          "@echo off`npython C:\Users\Public\Desktop\NO_BOT_WATCH.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_BOTFREE.bat" -Encoding ascii
 
-      - name: 4. 10-Min IP Rotator (Russian Mode)
+      - name: 4. Auto IP Changer (10-Min Cycle)
         run: |
           $rotator = @"
           import os, time, psutil, subprocess
           while True:
               time.sleep(600) # 10 Minutes
-              print("Rotating IP... Ensuring Russia Connection...")
               for p in psutil.process_iter(['name']):
                   if 'firefox' in p.info['name'].lower(): p.kill()
               time.sleep(5)
-              subprocess.Popen(['python', r'C:\Users\Public\Desktop\RUSSIAN_WATCH.py'])
+              subprocess.Popen(['python', r'C:\Users\Public\Desktop\NO_BOT_WATCH.py'])
           "@
-          $rotator | Out-File -FilePath "C:\Users\Public\Desktop\AUTO_IP_ROTATOR.py" -Encoding ascii
-          "@echo off`npython C:\Users\Public\Desktop\AUTO_IP_ROTATOR.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\RUN_IP_ROTATOR.bat" -Encoding ascii
+          $rotator | Out-File -FilePath "C:\Users\Public\Desktop\AUTO_ROTATOR.py" -Encoding ascii
+          "@echo off`npython C:\Users\Public\Desktop\AUTO_ROTATOR.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\RUN_ROTATOR.bat" -Encoding ascii
 
       - name: 5. Final Keep-Alive
         run: Start-Sleep -Seconds 9000
