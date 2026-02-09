@@ -1,4 +1,4 @@
-name: TITAN-V150-GHOST-PROTOCOL
+name: TITAN-V155-GHOST-ULTRA
 
 on:
   workflow_dispatch:
@@ -9,26 +9,27 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. System Hardening
+      - name: 1. Deep Prep & Winget Firefox
         run: |
           Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
-          pip install psutil requests --quiet
-          # Installing 7-Zip to handle portable files
-          choco install 7zip -y
+          pip install psutil --quiet
+          winget install --id Mozilla.Firefox -e --silent --accept-source-agreements
 
-      - name: 2. Tailscale Login (Check Logs)
+      - name: 2. Tailscale Login (Login Link in Logs)
         shell: powershell
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up
-          Write-Host "WAITING 120 SECONDS FOR LOGIN..." -ForegroundColor Yellow
+          Write-Host ">>> CHECK ABOVE FOR LOGIN LINK <<<" -ForegroundColor Yellow
           Start-Sleep -Seconds 120
           $tsIP = (& "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4)
-          Write-Host "RDP IP: $tsIP" -ForegroundColor Green
+          Write-Host "##############################################"
+          Write-Host "SUCCESS! RDP IP: $tsIP" -ForegroundColor Green
+          Write-Host "##############################################"
 
-      - name: 3. Deploy Ghost-Protocol Script
+      - name: 3. Deploy Fixed Ghost Script
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -38,53 +39,44 @@ jobs:
           }
 
           $ghostScript = @"
-          import os, time, subprocess, psutil, requests, random
+          import os, time, subprocess, psutil, random
 
-          # --- YOUR DIRECT LINKS ---
+          # --- YOUR VIDEO LINKS ---
           links = [
               "https://www.youtube.com/watch?v=oiyYa3IL2Rc",
               "https://www.youtube.com/watch?v=OXuTuHQqB7s",
-              "https://www.youtube.com/watch?v=K9ihEWJn4Go"
+              "https://www.youtube.com/watch?v=K9ihEWJn4Go",
+              "https://www.youtube.com/watch?v=z25lo2mogbk",
+              "https://www.youtube.com/watch?v=ZkJlQ_q7x5Q"
           ]
 
-          def launch_ghost_sessions():
-              # Direct Winget Firefox Path
+          def launch_ghost():
               ff_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
-              if not os.path.exists(ff_path):
-                  subprocess.run(['winget', 'install', '--id', 'Mozilla.Firefox', '-e', '--silent'])
+              # Paths are now handled safely with r'' prefix
+              base_dir = r'C:\Users\Public\GhostProfiles'
+              if not os.path.exists(base_dir): os.makedirs(base_dir)
 
-              print("[GHOST] Initializing 15 Isolated Identities...")
-              
               for i in range(15):
-                  p_dir = f'C:\Users\Public\Ghost_{i}'
+                  p_dir = os.path.join(base_dir, f'Profile_{i}')
                   if not os.path.exists(p_dir): os.makedirs(p_dir)
                   
-                  # Har session ke liye random "Human-like" delay
                   url = random.choice(links)
-                  
-                  # Firefox unique profile launch
-                  # Is se YouTube ko har window alag browser lagegi
-                  cmd = [
-                      ff_path, 
-                      "-new-instance", 
-                      "-profile", p_dir,
-                      "-no-remote",
-                      url
-                  ]
-                  subprocess.Popen(cmd)
-                  print(f"Session {i+1} Ghosting Active.")
-                  time.sleep(25) # Bohat zaroori hai taake YouTube spikes na pakde
+                  # Launching with isolated profile and no-remote flag
+                  subprocess.Popen([ff_path, "-new-instance", "-profile", p_dir, "-no-remote", url])
+                  print(f"Ghost Profile {i} Launched Successfully.")
+                  time.sleep(20)
 
-          while True:
-              # Sab purane browsers khatam karna taake RAM fresh rahe
-              [p.kill() for p in psutil.process_iter(['name']) if 'firefox' in p.info['name'].lower()]
-              time.sleep(10)
-              launch_ghost_sessions()
-              # 4 Ghante tak chalne dena (Organic Watchtime)
-              time.sleep(14400)
+          if __name__ == "__main__":
+              # Clean old sessions
+              for p in psutil.process_iter(['name']):
+                  if 'firefox' in p.info['name'].lower(): p.kill()
+              
+              time.sleep(5)
+              launch_ghost()
+              print("All 15 Ghost Sessions are active. 24/7 Watchtime started.")
           "@
-          $ghostScript | Out-File -FilePath "C:\Users\Public\Desktop\GHOST.py" -Encoding ascii
-          "@echo off`ntitle GHOST PROTOCOL ACTIVE`npython C:\Users\Public\Desktop\GHOST.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_GHOST.bat" -Encoding ascii
+          $ghostScript | Out-File -FilePath "C:\Users\Public\Desktop\GHOST_ULTRA.py" -Encoding ascii
+          "@echo off`ntitle GHOST ULTRA ACTIVE`npython C:\Users\Public\Desktop\GHOST_ULTRA.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_GHOST.bat" -Encoding ascii
 
-      - name: 4. Keep Alive
+      - name: 4. Keep-Alive
         run: Start-Sleep -Seconds 9000
