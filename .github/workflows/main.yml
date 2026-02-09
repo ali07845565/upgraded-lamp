@@ -1,4 +1,4 @@
-name: TITAN-V148-UNSTOPPABLE
+name: TITAN-V150-GHOST-PROTOCOL
 
 on:
   workflow_dispatch:
@@ -9,37 +9,26 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Deep System Prep & Firefox Install
+      - name: 1. System Hardening
         run: |
           Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
           pip install psutil requests --quiet
-          # Using Winget (Windows default) to install Firefox - much more stable
-          winget install --id Mozilla.Firefox -e --silent --accept-source-agreements --accept-package-agreements
+          # Installing 7-Zip to handle portable files
+          choco install 7zip -y
 
-      - name: 2. Tailscale Interactive Login (2 Minute Wait)
+      - name: 2. Tailscale Login (Check Logs)
         shell: powershell
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          
-          Write-Host "`n`n#######################################################" -ForegroundColor Cyan
-          Write-Host ">>> STEP 1: CLICK THE LOGIN LINK BELOW <<<" -ForegroundColor Yellow -BackgroundColor Black
-          
-          # Start Tailscale and force the login URL to show in logs
           & "$env:ProgramFiles\Tailscale\tailscale.exe" up
-          
-          Write-Host "`nAGAR LINK NAZAR NA AAYE TO 5-10 SECOND WAIT KAREIN..." -ForegroundColor White
-          Write-Host "YOU HAVE 120 SECONDS TO FINISH LOGIN" -ForegroundColor Red
+          Write-Host "WAITING 120 SECONDS FOR LOGIN..." -ForegroundColor Yellow
           Start-Sleep -Seconds 120
-          
           $tsIP = (& "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4)
-          Write-Host "#######################################################" -ForegroundColor Cyan
-          Write-Host "SUCCESS! YOUR RDP IP IS: $tsIP" -ForegroundColor Green -BackgroundColor Black
-          Write-Host "USERNAME: RDP | PASSWORD: Admin@Watch786" -ForegroundColor White
-          Write-Host "#######################################################`n"
+          Write-Host "RDP IP: $tsIP" -ForegroundColor Green
 
-      - name: 3. Create THE MASTER Script
+      - name: 3. Deploy Ghost-Protocol Script
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -48,44 +37,54 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-          $masterScript = @"
+          $ghostScript = @"
           import os, time, subprocess, psutil, requests, random
 
+          # --- YOUR DIRECT LINKS ---
           links = [
-              "https://m.youtube.com/watch?v=oiyYa3IL2Rc",
-              "https://m.youtube.com/watch?v=OXuTuHQqB7s",
-              "https://m.youtube.com/watch?v=K9ihEWJn4Go",
-              "https://m.youtube.com/watch?v=z25lo2mogbk",
-              "https://m.youtube.com/watch?v=ZkJlQ_q7x5Q"
+              "https://www.youtube.com/watch?v=oiyYa3IL2Rc",
+              "https://www.youtube.com/watch?v=OXuTuHQqB7s",
+              "https://www.youtube.com/watch?v=K9ihEWJn4Go"
           ]
 
-          def start_firefox():
-              # Standard Firefox path after winget install
+          def launch_ghost_sessions():
+              # Direct Winget Firefox Path
               ff_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+              if not os.path.exists(ff_path):
+                  subprocess.run(['winget', 'install', '--id', 'Mozilla.Firefox', '-e', '--silent'])
+
+              print("[GHOST] Initializing 15 Isolated Identities...")
               
               for i in range(15):
-                  p_dir = f'C:\Users\Public\TitanFF_{i}'
+                  p_dir = f'C:\Users\Public\Ghost_{i}'
                   if not os.path.exists(p_dir): os.makedirs(p_dir)
                   
-                  # Proxy fetch
-                  try:
-                      r = requests.get("https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=10000&country=all")
-                      proxies = r.text.splitlines()
-                      proxy = random.choice(proxies) if proxies else None
-                  except: proxy = None
-
-                  # Launching Firefox with profile and link
-                  subprocess.Popen([ff_path, "-new-instance", "-profile", p_dir, links[i % len(links)]])
-                  time.sleep(15)
+                  # Har session ke liye random "Human-like" delay
+                  url = random.choice(links)
+                  
+                  # Firefox unique profile launch
+                  # Is se YouTube ko har window alag browser lagegi
+                  cmd = [
+                      ff_path, 
+                      "-new-instance", 
+                      "-profile", p_dir,
+                      "-no-remote",
+                      url
+                  ]
+                  subprocess.Popen(cmd)
+                  print(f"Session {i+1} Ghosting Active.")
+                  time.sleep(25) # Bohat zaroori hai taake YouTube spikes na pakde
 
           while True:
+              # Sab purane browsers khatam karna taake RAM fresh rahe
               [p.kill() for p in psutil.process_iter(['name']) if 'firefox' in p.info['name'].lower()]
-              time.sleep(5)
-              start_firefox()
-              time.sleep(10800) 
+              time.sleep(10)
+              launch_ghost_sessions()
+              # 4 Ghante tak chalne dena (Organic Watchtime)
+              time.sleep(14400)
           "@
-          $masterScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_MASTER.py" -Encoding ascii
-          "@echo off`npython C:\Users\Public\Desktop\TITAN_MASTER.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START.bat" -Encoding ascii
+          $ghostScript | Out-File -FilePath "C:\Users\Public\Desktop\GHOST.py" -Encoding ascii
+          "@echo off`ntitle GHOST PROTOCOL ACTIVE`npython C:\Users\Public\Desktop\GHOST.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_GHOST.bat" -Encoding ascii
 
-      - name: 4. Final Keep-Alive
+      - name: 4. Keep Alive
         run: Start-Sleep -Seconds 9000
