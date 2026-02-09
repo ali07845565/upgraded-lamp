@@ -1,4 +1,4 @@
-name: TITAN-V140-AUTO-PILOT
+name: TITAN-V144-FINAL-ULTIMATUM
 
 on:
   workflow_dispatch:
@@ -9,13 +9,39 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Setup Environment
+      - name: 1. Deep System Prep
         run: |
+          # Faltu services band karke RAM bachana
           Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
-          pip install psutil pyautogui opencv-python --quiet
+          pip install psutil requests --quiet
           choco install googlechrome --accept-license -y
 
-      - name: 2. Create THE AUTO-CLICKER Master Script
+      - name: 2. Tailscale API Login & Terminal IP Output
+        shell: powershell
+        run: |
+          # Tailscale Installation
+          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
+          Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
+          Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
+          
+          # Connecting with your API Token
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=tskey-api-k51fmL77NN11CNTRL-JtoyQjqtRCZ3utdaCWfDCZVzxPL6GdAH --hostname="Titan-RDP-Final" --accept-routes
+          
+          # Waiting for IP Assignment
+          Start-Sleep -Seconds 12
+          $tsIP = (& "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4)
+          
+          # --- OUTPUT TO GITHUB TERMINAL ---
+          Write-Host "`n`n"
+          Write-Host "**********************************************" -ForegroundColor Cyan
+          Write-Host "   SUCCESS! RDP IS READY TO CONNECT" -ForegroundColor Green
+          Write-Host "   IP ADDRESS: $tsIP" -ForegroundColor Yellow -BackgroundColor Black
+          Write-Host "   USERNAME:   RDP" -ForegroundColor White
+          Write-Host "   PASSWORD:   Admin@Watch786" -ForegroundColor White
+          Write-Host "**********************************************" -ForegroundColor Cyan
+          Write-Host "`n`n"
+
+      - name: 3. Create Hardened Proxy Master Script
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -24,14 +50,9 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-          $autoPilotScript = @"
-          import os
-          import time
-          import subprocess
-          import psutil
-          import pyautogui
+          $finalScript = @"
+          import os, time, subprocess, psutil, requests, random
 
-          # --- YOUR LINKS ---
           links = [
               "https://m.youtube.com/watch?v=oiyYa3IL2Rc",
               "https://m.youtube.com/watch?v=OXuTuHQqB7s",
@@ -40,54 +61,41 @@ jobs:
               "https://m.youtube.com/watch?v=ZkJlQ_q7x5Q"
           ]
 
-          chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-          profile_base = r'C:\Users\Public\TitanAutoPilot'
+          def get_proxies():
+              try:
+                  # SOCKS5 fresh proxies fetch karna
+                  r = requests.get("https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=10000&country=all&ssl=all&anonymity=all")
+                  return [p.strip() for p in r.text.splitlines() if p.strip()] if r.status_code == 200 else []
+              except: return []
 
-          def launch_and_connect_vpn():
-              print("[AUTO-PILOT] Launching Browsers & Attempting VPN Auto-Click...")
-              for i in range(15): # Pehle 15 windows handle karte hain RAM bachane ke liye
-                  p_dir = os.path.join(profile_base, f'User_{i}')
-                  url = links[i % len(links)]
+          def start_browsers():
+              proxies = get_proxies()
+              if not proxies: return
+              chrome = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
+              
+              for i in range(25):
+                  p_dir = f'C:\Users\Public\TitanProfile_{i}'
+                  proxy = random.choice(proxies)
                   
-                  # Force Load Urban VPN (ID: eppiocemhmnlbhjplcgneofghclihonj)
-                  subprocess.Popen([
-                      chrome_path, 
-                      f'--user-data-dir={p_dir}',
-                      '--disable-blink-features=AutomationControlled',
-                      '--window-size=600,500',
-                      url
-                  ])
-                  
-                  time.sleep(12) # Browser load hone ka wait
-
-                  # --- AI MOUSE CLICK LOGIC ---
-                  # Ye coordinates typical Urban VPN location par hain (Right side of bar)
-                  # Note: Ye RDP ki screen resolution par depend karta hai
-                  try:
-                      print(f"Profile {i}: Attempting VPN Connection...")
-                      # Extension icon click (Assuming it's pinned)
-                      pyautogui.click(550, 50) 
-                      time.sleep(3)
-                      # Connect Button click inside extension popup
-                      pyautogui.click(450, 400) 
-                  except:
-                      print("Mouse Click failed, proceeding to next...")
-                  
-                  time.sleep(5)
+                  # Hardened Flags: In flags se YouTube bot nahi pakad payega
+                  flags = [
+                      chrome, f'--user-data-dir={p_dir}', f'--proxy-server=socks5://{proxy}',
+                      '--disable-blink-features=AutomationControlled', '--mute-audio',
+                      '--window-size=400,300', '--force-device-scale-factor=0.5',
+                      '--user-agent=Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36',
+                      '--no-first-run', '--no-default-browser-check', links[i % len(links)]
+                  ]
+                  subprocess.Popen(flags)
+                  time.sleep(12) # Human delay
 
           while True:
-              for proc in psutil.process_iter(['name']):
-                  if proc.info['name'] == 'chrome.exe': proc.kill()
+              [p.kill() for p in psutil.process_iter(['name']) if p.info['name'] == 'chrome.exe']
               time.sleep(5)
-              launch_and_connect_vpn()
-              time.sleep(14400)
+              start_browsers()
+              time.sleep(10800) # 3 ghante baad reset
           "@
-          
-          $autoPilotScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_AUTOPILOT.py" -Encoding ascii
-          "@echo off`npython C:\Users\Public\Desktop\TITAN_AUTOPILOT.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_AUTOPILOT.bat" -Encoding ascii
+          $finalScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_FINAL.py" -Encoding ascii
+          "@echo off`npython C:\Users\Public\Desktop\TITAN_FINAL.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START.bat" -Encoding ascii
 
-      - name: 3. Final Prep
-        run: |
-          Write-Host "V140 DEPLOYED!"
-          Write-Host "Connect RDP and run START_AUTOPILOT.bat"
-          Start-Sleep -Seconds 9000
+      - name: 4. Keep Alive
+        run: Start-Sleep -Seconds 9000
