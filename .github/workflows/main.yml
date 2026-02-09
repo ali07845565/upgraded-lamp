@@ -1,4 +1,4 @@
-name: TITAN-V147-DIRECT-FIREFOX
+name: TITAN-V148-UNSTOPPABLE
 
 on:
   workflow_dispatch:
@@ -9,14 +9,12 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Setup Environment & Direct Firefox Download
+      - name: 1. Deep System Prep & Firefox Install
         run: |
           Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
           pip install psutil requests --quiet
-          # Direct Firefox Portable download and extract
-          $ffUrl = "https://sourceforge.net/projects/portableapps/files/Mozilla%20Firefox%2C%20Portable%20Ed./Mozilla%20Firefox%2C%20Portable%20Edition%20122.0/FirefoxPortable_122.0_English.paf.exe/download"
-          Invoke-WebRequest -Uri $ffUrl -OutFile "ff_setup.exe"
-          Start-Process "ff_setup.exe" -ArgumentList "/S" -Wait # Silent Install
+          # Using Winget (Windows default) to install Firefox - much more stable
+          winget install --id Mozilla.Firefox -e --silent --accept-source-agreements --accept-package-agreements
 
       - name: 2. Tailscale Interactive Login (2 Minute Wait)
         shell: powershell
@@ -25,13 +23,14 @@ jobs:
           Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
           Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
           
-          Write-Host "`n#######################################################" -ForegroundColor Cyan
-          Write-Host "STEP 1: CLICK THE LINK BELOW TO LOGIN (YOU HAVE 2 MINUTES)" -ForegroundColor Yellow
+          Write-Host "`n`n#######################################################" -ForegroundColor Cyan
+          Write-Host ">>> STEP 1: CLICK THE LOGIN LINK BELOW <<<" -ForegroundColor Yellow -BackgroundColor Black
           
-          # Force generating a login link
-          Start-Process "$env:ProgramFiles\Tailscale\tailscale.exe" -ArgumentList "up"
+          # Start Tailscale and force the login URL to show in logs
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up
           
-          Write-Host "LOGS KO DEKHTE RAHEN, LOGIN URL UPAR AA CHUKA HOGA..." -ForegroundColor White
+          Write-Host "`nAGAR LINK NAZAR NA AAYE TO 5-10 SECOND WAIT KAREIN..." -ForegroundColor White
+          Write-Host "YOU HAVE 120 SECONDS TO FINISH LOGIN" -ForegroundColor Red
           Start-Sleep -Seconds 120
           
           $tsIP = (& "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4)
@@ -40,7 +39,7 @@ jobs:
           Write-Host "USERNAME: RDP | PASSWORD: Admin@Watch786" -ForegroundColor White
           Write-Host "#######################################################`n"
 
-      - name: 3. Create Firefox Master Script
+      - name: 3. Create THE MASTER Script
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -49,7 +48,7 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-          $firefoxScript = @"
+          $masterScript = @"
           import os, time, subprocess, psutil, requests, random
 
           links = [
@@ -61,14 +60,21 @@ jobs:
           ]
 
           def start_firefox():
-              # Typical path after silent install
-              ff_path = r'C:\FirefoxPortable\FirefoxPortable.exe'
-              if not os.path.exists(ff_path):
-                  ff_path = r'C:\Users\runneradmin\Desktop\FirefoxPortable\FirefoxPortable.exe'
-
+              # Standard Firefox path after winget install
+              ff_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+              
               for i in range(15):
-                  p_dir = f'C:\Users\Public\FF_Profile_{i}'
+                  p_dir = f'C:\Users\Public\TitanFF_{i}'
                   if not os.path.exists(p_dir): os.makedirs(p_dir)
+                  
+                  # Proxy fetch
+                  try:
+                      r = requests.get("https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=10000&country=all")
+                      proxies = r.text.splitlines()
+                      proxy = random.choice(proxies) if proxies else None
+                  except: proxy = None
+
+                  # Launching Firefox with profile and link
                   subprocess.Popen([ff_path, "-new-instance", "-profile", p_dir, links[i % len(links)]])
                   time.sleep(15)
 
@@ -78,8 +84,8 @@ jobs:
               start_firefox()
               time.sleep(10800) 
           "@
-          $firefoxScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_FIREFOX.py" -Encoding ascii
-          "@echo off`npython C:\Users\Public\Desktop\TITAN_FIREFOX.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_FIREFOX.bat" -Encoding ascii
+          $masterScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_MASTER.py" -Encoding ascii
+          "@echo off`npython C:\Users\Public\Desktop\TITAN_MASTER.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START.bat" -Encoding ascii
 
       - name: 4. Final Keep-Alive
         run: Start-Sleep -Seconds 9000
