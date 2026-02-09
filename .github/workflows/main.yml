@@ -1,4 +1,4 @@
-name: TITAN-V138-IP-BRIDGE-OVERLORD
+name: TITAN-V140-AUTO-PILOT
 
 on:
   workflow_dispatch:
@@ -9,22 +9,13 @@ jobs:
     timeout-minutes: 9600
 
     steps:
-      - name: 1. Deep System Hardening
+      - name: 1. Setup Environment
         run: |
           Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
-          pip install psutil pyautogui requests --quiet
+          pip install psutil pyautogui opencv-python --quiet
           choco install googlechrome --accept-license -y
 
-      - name: 2. Tailscale Secure Tunnel
-        continue-on-error: true 
-        run: |
-          $authKey = "tskey-auth-kYcM6WeyfR11CNTRL-9FQy2jXXfC6nPVvmruwuC66aU7SsCJz9h" 
-          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
-          Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
-          Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=$authKey --hostname="titan-v138-bridge" --accept-routes
-
-      - name: 3. Create THE IP-BRIDGE Script (Hard-Coded Links)
+      - name: 2. Create THE AUTO-CLICKER Master Script
         run: |
           $password = "Admin@Watch786"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
@@ -33,74 +24,70 @@ jobs:
               Add-LocalGroupMember -Group "Administrators" -Member "RDP"
           }
 
-          $bridgeScript = @"
+          $autoPilotScript = @"
           import os
           import time
           import subprocess
           import psutil
-          import random
-          import requests
+          import pyautogui
 
-          # --- YOUR LINKS (HARD-CODED) ---
+          # --- YOUR LINKS ---
           links = [
-              "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G08",
-              "https://youtu.be/K9ihEWJn4Go?si=VMP02dzeGwZtH_G09",
-              "https://youtu.be/z25lo2mogbk?si=RDQn25eKVGl6u8Dy0",
-              "https://youtu.be/z25lo2mogbk?si=RDQn25eKVGl6u8Dy1",
-              "https://youtu.be/z25lo2mogbk?si=RDQn25eKVGl6u8Dy2"
+              "https://m.youtube.com/watch?v=oiyYa3IL2Rc",
+              "https://m.youtube.com/watch?v=OXuTuHQqB7s",
+              "https://m.youtube.com/watch?v=K9ihEWJn4Go",
+              "https://m.youtube.com/watch?v=z25lo2mogbk",
+              "https://m.youtube.com/watch?v=ZkJlQ_q7x5Q"
           ]
-          
+
           chrome_path = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-          profile_base = r'C:\Users\Public\TitanBridgeProfiles'
+          profile_base = r'C:\Users\Public\TitanAutoPilot'
 
-          def launch_bridge_session():
-              print("[BRIDGE] Masking IP Identity & Injecting Traffic...")
-              for i in range(25):
+          def launch_and_connect_vpn():
+              print("[AUTO-PILOT] Launching Browsers & Attempting VPN Auto-Click...")
+              for i in range(15): # Pehle 15 windows handle karte hain RAM bachane ke liye
+                  p_dir = os.path.join(profile_base, f'User_{i}')
                   url = links[i % len(links)]
-                  p_dir = os.path.join(profile_base, f'BridgeUser_{i}')
                   
-                  # Stealth User-Agents
-                  ua = random.choice([
-                      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-                      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                  ])
-
-                  flags = [
+                  # Force Load Urban VPN (ID: eppiocemhmnlbhjplcgneofghclihonj)
+                  subprocess.Popen([
                       chrome_path, 
-                      f'--user-data-dir={p_dir}', 
-                      f'--user-agent={ua}',
-                      '--no-first-run', 
-                      '--mute-audio', 
+                      f'--user-data-dir={p_dir}',
                       '--disable-blink-features=AutomationControlled',
-                      '--disable-background-timer-throttling',
-                      '--disable-backgrounding-occluded-windows',
-                      '--window-size=500,400',
-                      '--force-device-scale-factor=0.6',
-                      # Hidden Flag to bypass Data-Center detection
-                      '--disable-features=IsolateOrigins,site-per-process',
+                      '--window-size=600,500',
                       url
-                  ]
-                  subprocess.Popen(flags)
-                  print(f"Window {i+1} Tunneled Successfully.")
-                  time.sleep(12) # High delay to avoid IP flagging
+                  ])
+                  
+                  time.sleep(12) # Browser load hone ka wait
+
+                  # --- AI MOUSE CLICK LOGIC ---
+                  # Ye coordinates typical Urban VPN location par hain (Right side of bar)
+                  # Note: Ye RDP ki screen resolution par depend karta hai
+                  try:
+                      print(f"Profile {i}: Attempting VPN Connection...")
+                      # Extension icon click (Assuming it's pinned)
+                      pyautogui.click(550, 50) 
+                      time.sleep(3)
+                      # Connect Button click inside extension popup
+                      pyautogui.click(450, 400) 
+                  except:
+                      print("Mouse Click failed, proceeding to next...")
+                  
+                  time.sleep(5)
 
           while True:
               for proc in psutil.process_iter(['name']):
-                  if proc.info['name'] == 'chrome.exe':
-                      try: proc.kill()
-                      except: pass
+                  if proc.info['name'] == 'chrome.exe': proc.kill()
               time.sleep(5)
-              launch_bridge_session()
-              print("[SUCCESS] Overlord Bridge Active. Session reset in 4 hours.")
-              time.sleep(14400) 
+              launch_and_connect_vpn()
+              time.sleep(14400)
           "@
           
-          $bridgeScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_BRIDGE.py" -Encoding ascii
-          "@echo off`ntitle TITAN IP-BRIDGE`nnet stop audiosrv /y >nul 2>&1`nipconfig /flushdns >nul`npython C:\Users\Public\Desktop\TITAN_BRIDGE.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_BRIDGE.bat" -Encoding ascii
+          $autoPilotScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_AUTOPILOT.py" -Encoding ascii
+          "@echo off`npython C:\Users\Public\Desktop\TITAN_AUTOPILOT.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START_AUTOPILOT.bat" -Encoding ascii
 
-      - name: 4. Final Deployment Instruction
+      - name: 3. Final Prep
         run: |
-          Write-Host "V138 IP-BRIDGE DEPLOYED!"
-          Write-Host "Status: Bot-Detection Shield MAX"
-          Write-Host "Method: Hardware-Identity Masking"
+          Write-Host "V140 DEPLOYED!"
+          Write-Host "Connect RDP and run START_AUTOPILOT.bat"
           Start-Sleep -Seconds 9000
