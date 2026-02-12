@@ -185,14 +185,10 @@ jobs:
           Get-Content "C:\Users\Public\Desktop\address.log" | Select-String "trycloudflare.com"
 
       - name: 8. Upload Logs as Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # نیا: v3 سے v4 پر اپ گریڈ
         with:
           name: ghost-logs
           path: C:\Users\Public\Desktop\ghost_log.txt
 
       - name: 9. Cleanup
-        if: always()
-        run: Remove-Item -Path C:\Users\Public\Ghost* -Recurse -Force
-
-      - name: 10. Stay Alive (9 Hours with Auto-Restart)
-        run: Start-Sleep -Seconds 32400
+        if: always
