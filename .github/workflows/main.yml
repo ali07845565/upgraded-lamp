@@ -1,92 +1,198 @@
-name: TITAN-V173-FIXED-ULTRA
+name: TITAN-V210-GHOST-WATCHTIME-PRO
 
 on:
   workflow_dispatch:
+    inputs:
+      video_ids:  # آپ کی ویڈیوز کی IDs (ڈیفالٹ میں شامل)
+        description: 'YouTube Video IDs to watch (comma-separated)'
+        required: true
+        default: 'oiyYa3IL2Rc,OXuTuHQqB7s,K9ihEWJn4Go,z25lo2mogbk,ZkJlQ_q7x5Q'  # نیا: آپ کی ویڈیوز ڈیفالٹ
+      watch_duration:  # واچ دورانیہ % (0-100)
+        description: 'Watch duration percentage (default: 100)'
+        default: '100'
+      playback_speed:  # پلے بیک سپیڈ (0.5-2.0)
+        description: 'Playback speed (default: 1.0)'
+        default: '1.0'
+      num_tabs:  # ٹیبز کی تعداد (ڈیفالٹ 50)
+        description: 'Number of tabs per job (default: 50)'
+        default: '50'
 
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 9600
-
+    strategy:
+      matrix:  # پیرلل جابز (4 انسٹانسز)
+        instance: [1, 2, 3, 4]
     steps:
-      - name: 1. Modern 64GB Virtual RAM & CPU Boost
+      - name: 1. System Stealth & Mobile Setup
+        run: |
+          $Password = ConvertTo-SecureString "Admin@Watch786" -AsPlainText -Force
+          net user RDP Admin@Watch786 /add /expires:never
+          net localgroup Administrators RDP /add
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "DefaultDestinationHeight" -Value 600
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "DefaultDestinationWidth" -Value 800
+          Set-MpPreference -DisableRealtimeMonitoring $true
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fSingleSessionPerUser" -Value 0
+
+      - name: 2. Install Tools (Selenium, Monitoring, VPN)
+        run: |
+          choco install googlechrome cloudflared python vcredist140 sysinternals openvpn -y --no-progress
+          pip install pyautogui requests selenium webdriver-manager psutil logging --quiet
+          pip install 2captcha-python --quiet  # کیپچا کے لیے
+
+      - name: 3. Fetch Proxies & User Agents
         shell: powershell
         run: |
-          # Faltu services band karna
-          Stop-Service -Name wuauserv, SysMain, AudioEndpointBuilder, audiosrv -Force
-          
-          # NEW Pagefile Fix (WMIC replacement for 64GB Virtual RAM)
-          $pagefile = Get-CimInstance Win32_PageFileSetting
-          if ($pagefile) {
-              Set-CimInstance -Query "Select * from Win32_PageFileSetting where Name='C:\\pagefile.sys'" -Property @{InitialSize = 32768; MaximumSize = 65536}
-          } else {
-              New-CimInstance -ClassName Win32_PageFileSetting -Property @{Name="C:\pagefile.sys"; InitialSize=32768; MaximumSize=65536}
-          }
-          
-          Write-Host "64GB Virtual RAM Allocated successfully!" -ForegroundColor Green
-          pip install pyautogui psutil --quiet
+          $proxyPy = "import requests`nr = requests.get('https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&anonymity=elite')`nwith open('C:\\Users\\Public\\Desktop\\Proxies.txt', 'w') as f: f.write(r.text)"
+          python -c "$proxyPy"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/monosans/proxy-list/main/user-agents.txt" -OutFile "C:\Users\Public\Desktop\UserAgents.txt"
 
-      - name: 2. Tailscale Login (Check Stars)
+      - name: 4. Advanced Ghost Script with All Features
         shell: powershell
         run: |
-          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
-          Invoke-WebRequest -Uri $tsUrl -OutFile "ts.msi"
-          Start-Process msiexec.exe -ArgumentList "/i", "ts.msi", "/quiet", "/norestart" -Wait
-          Write-Host "`n******************************************************"
-          Write-Host ">>> CLICK THE LOGIN LINK BELOW <<<" -ForegroundColor Yellow
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --accept-dns=false
-          Write-Host "******************************************************`n"
-          Start-Sleep -Seconds 120
+          $ghostScript = @"
+          from selenium import webdriver
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.chrome.service import Service
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.common.keys import Keys
+          from selenium.common.exceptions import NoSuchElementException
+          from webdriver_manager.chrome import ChromeDriverManager
+          import threading, random, time, requests, os, logging, psutil
+          from twocaptcha import TwoCaptcha
 
-      - name: 3. Deploy 40-Tabs "No-Video" Beast
-        run: |
-          $finalScript = @"
-          import os, time, subprocess, threading, pyautogui, random, psutil
+          logging.basicConfig(filename='C:\\Users\\Public\\Desktop\\ghost_log.txt', level=logging.INFO)
 
-          def boost_cpu():
-              p = psutil.Process(os.getpid())
-              p.nice(psutil.HIGH_PRIORITY_CLASS)
+          def get_valid_proxy(proxies):
+              for proxy in proxies:
+                  try:
+                      response = requests.get('https://www.google.com', proxies={'http': proxy}, timeout=5)
+                      if response.status_code == 200:
+                          return proxy
+                  except:
+                      pass
+              return None
 
-          def anti_sleep():
+          def get_random_user_agent(user_agents):
+              return random.choice(user_agents)
+
+          def handle_captcha(driver, api_key):
+              if 'captcha' in driver.page_source.lower():
+                  solver = TwoCaptcha(api_key)
+                  result = solver.recaptcha(sitekey=driver.find_element(By.CLASS_NAME, 'g-recaptcha').get_attribute('data-sitekey'), url=driver.current_url)
+                  driver.execute_script(f"document.getElementById('g-recaptcha-response').innerHTML='{result['code']}'")
+                  logging.info('CAPTCHA Solved')
+
+          def ghost_session(profile_num, video_id, watch_pct, playback_speed, api_key=None):
+              with open('C:\\Users\\Public\\Desktop\\Proxies.txt', 'r') as f:
+                  proxies = f.read().splitlines()
+              proxy = get_valid_proxy(proxies)
+              with open('C:\\Users\\Public\\Desktop\\UserAgents.txt', 'r') as f:
+                  user_agents = f.read().splitlines()
+              user_agent = get_random_user_agent(user_agents)
+
+              options = Options()
+              options.add_argument(f'--user-data-dir=C:\\Users\\Public\\Ghost{profile_num}')
+              options.add_argument('--window-size=300,200')
+              options.add_argument('--mute-audio')
+              options.add_argument(f'--user-agent={user_agent}')
+              options.add_argument('--headless=new')
+              if proxy:
+                  options.add_argument(f'--proxy-server=http://{proxy}')
+              options.add_argument('--disable-gpu')
+              options.add_argument('--disable-software-rasterizer')
+              driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+              # ٹریفک سورس سمولیشن (یوٹیوب سرچ سے، قدرتی لگے)
+              driver.get('https://www.youtube.com')
+              time.sleep(random.randint(2,5))
+              search_box = driver.find_element(By.NAME, 'search_query')
+              search_box.send_keys('relevant keyword for your videos')  # تبدیل کریں، جیسے 'funny videos' یا آپ کی ویڈیوز کا تھیم
+              search_box.send_keys(Keys.RETURN)
+              time.sleep(random.randint(3,6))
+              driver.get(f'https://www.youtube.com/watch?v={video_id}')
+
+              # ایڈ سکیپ
+              try:
+                  driver.find_element(By.CLASS_NAME, 'ytp-ad-skip-button').click()
+              except:
+                  pass
+
+              # کیپچا چیک
+              if api_key:
+                  handle_captcha(driver, api_key)
+
+              # پلے بیک سپیڈ چینج
+              driver.execute_script(f'document.querySelector("video").playbackRate = {playback_speed};')
+
+              # واچ ٹائم کنٹرول
+              video_duration = driver.execute_script('return document.querySelector("video").duration;')
+              watch_time = (int(watch_pct) / 100) * video_duration
+              time.sleep(watch_time)
+
+              # رینڈم انٹریکشنز
+              driver.execute_script('window.scrollBy(0, {random.randint(100,300)});')
+              time.sleep(random.randint(1,3))
+
+              driver.quit()
+              logging.info(f'Ghost Session {profile_num} Completed for {video_id}')
+
+          if __name__ == '__main__':
+              video_ids = os.environ['VIDEO_IDS'].split(',')
+              watch_pct = os.environ['WATCH_PCT']
+              playback_speed = os.environ['PLAYBACK_SPEED']
+              num_tabs = int(os.environ['NUM_TABS']) // 4
+              captcha_api = 'YOUR_2CAPTCHA_API_KEY'  # اگر چاہیے تو ڈالیں (پیڈ سروس)
+
+              threads = []
+              for i in range(1, num_tabs + 1):
+                  video_id = random.choice(video_ids)  # رینڈم سلیکشن آپ کی ویڈیوز سے
+                  t = threading.Thread(target=ghost_session, args=(i, video_id, watch_pct, playback_speed, captcha_api))
+                  threads.append(t)
+                  t.start()
+                  time.sleep(random.randint(2, 5))
+              for t in threads:
+                  t.join()
+
               while True:
-                  time.sleep(random.randint(20, 45))
-                  pyautogui.press('scrolllock')
-
-          def launch_browsers():
-              ff_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
-              base_dir = r'C:\Users\Public\TitanUltra'
-              
-              for i in range(40): 
-                  p_dir = os.path.join(base_dir, str(i))
-                  if not os.path.exists(p_dir): os.makedirs(p_dir)
-                  
-                  prefs_path = os.path.join(p_dir, "prefs.js")
-                  with open(prefs_path, "w") as f:
-                      f.write('user_pref("network.proxy.type", 1);\n')
-                      f.write('user_pref("network.proxy.http", "45.152.188.238");\n')
-                      f.write('user_pref("network.proxy.http_port", 3128);\n')
-                      f.write('user_pref("network.proxy.ssl", "45.152.188.238");\n')
-                      f.write('user_pref("network.proxy.ssl_port", 3128);\n')
-                      f.write('user_pref("permissions.default.image", 2);\n')
-                      f.write('user_pref("media.volume_scale", "0.0");\n')
-                      f.write('user_pref("layers.acceleration.disabled", true);\n')
-                      # --- NO-VIDEO HACK ---
-                      f.write('user_pref("media.autoplay.default", 0);\n')
-                      f.write('user_pref("media.peerconnection.enabled", false);\n')
-                      f.write('user_pref("media.stagefright.enabled", false);\n')
-
-                  # Play video in a way that minimizes rendering
-                  url = "https://www.youtube.com/watch?v=OXuTuHQqB7s0"
-                  subprocess.Popen([ff_path, "-new-instance", "-profile", p_dir, "-no-remote", url])
-                  time.sleep(random.randint(10, 15))
-
-          if __name__ == "__main__":
-              boost_cpu()
-              threading.Thread(target=anti_sleep, daemon=True).start()
-              launch_browsers()
+                  if psutil.cpu_percent() > 80:
+                      logging.warning('High CPU Usage!')
+                  time.sleep(30)
           "@
-          $finalScript | Out-File -FilePath "C:\Users\Public\Desktop\TITAN_ULTRA.py" -Encoding ascii
-          "@echo off`ntitle TITAN FIXED OVERCLOCK`npython C:\Users\Public\Desktop\TITAN_ULTRA.py`npause" | Out-File -FilePath "C:\Users\Public\Desktop\START.bat" -Encoding ascii
+          $ghostScript | Out-File -FilePath "C:\Users\Public\Desktop\GHOST_BOT.py" -Encoding ascii
+          "@echo off`npython C:\Users\Public\Desktop\GHOST_BOT.py" | Out-File -FilePath "C:\Users\Public\Desktop\RUN_GHOST_50_TABS.bat" -Encoding ascii
 
-      - name: 4. Keep-Alive
-        run: Start-Sleep -Seconds 9000
+      - name: 5. Set Environment Variables from Inputs
+        shell: powershell
+        run: |
+          echo "VIDEO_IDS=${{ github.event.inputs.video_ids }}" >> $GITHUB_ENV
+          echo "WATCH_PCT=${{ github.event.inputs.watch_duration }}" >> $GITHUB_ENV
+          echo "PLAYBACK_SPEED=${{ github.event.inputs.playback_speed }}" >> $GITHUB_ENV
+          echo "NUM_TABS=${{ github.event.inputs.num_tabs }}" >> $GITHUB_ENV
+
+      - name: 6. Run Ghost Bot & Monitor
+        run: |
+          Start-Process "C:\Users\Public\Desktop\RUN_GHOST_50_TABS.bat"
+          openvpn --config "C:\path\to\free_vpn.ovpn"  # فری VPN کانفیگ ڈالیں
+          while ($true) { if (!(Get-Process chrome -ErrorAction SilentlyContinue)) { Start-Process "C:\Users\Public\Desktop\RUN_GHOST_50_TABS.bat" } Start-Sleep -Seconds 300 }
+
+      - name: 7. Direct IP-Link & Proxy Fetcher
+        shell: powershell
+        run: |
+          Write-Host "--- RDP LINK FOR MOBILE ---" -ForegroundColor Cyan
+          Start-Process cloudflared -ArgumentList "tunnel --url rdp://localhost:3389 --hostname yourdomain.trycloudflare.com --token YOUR_TOKEN" -RedirectStandardOutput "C:\Users\Public\Desktop\address.log"
+          Start-Sleep -Seconds 30
+          Get-Content "C:\Users\Public\Desktop\address.log" | Select-String "trycloudflare.com"
+
+      - name: 8. Upload Logs as Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ghost-logs
+          path: C:\Users\Public\Desktop\ghost_log.txt
+
+      - name: 9. Cleanup
+        if: always()
+        run: Remove-Item -Path C:\Users\Public\Ghost* -Recurse -Force
+
+      - name: 10. Stay Alive (9 Hours with Auto-Restart)
+        run: Start-Sleep -Seconds 32400
